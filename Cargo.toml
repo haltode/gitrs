@@ -1,0 +1,6 @@
+[package]
+name = "gitrs"
+version = "0.1.0"
+authors = ["haltode <contact@haltode.fr>"]
+
+[dependencies]
