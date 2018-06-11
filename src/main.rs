@@ -1,3 +1,8 @@
+mod init;
+
 fn main() {
-    println!("Hello, world!");
+    match init::init("test") {
+        Ok(_) => {}
+        Err(why) => println!("Could not initialize git repository: {:?}", why),
+    };
 }
