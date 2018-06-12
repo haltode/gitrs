@@ -65,9 +65,9 @@ pub fn sha1(input: &str) -> String {
         for i in 0..80 {
             let (k, f) = match i {
                 0...19 => (0x5a827999, (b & c) | (!b & d)),
-                20...39 => (0x6ed9eba1, (b ^ c ^ d)),
-                40...59 => (0x8f1bbcdc, ((b & c) | (b & d) | c & d)),
-                60...79 => (0xca62c1d6, (b ^ c ^ d)),
+                20...39 => (0x6ed9eba1, b ^ c ^ d),
+                40...59 => (0x8f1bbcdc, (b & c) | (b & d) | (c & d)),
+                60...79 => (0xca62c1d6, b ^ c ^ d),
                 _ => unreachable!(),
             };
 
