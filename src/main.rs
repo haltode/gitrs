@@ -1,4 +1,5 @@
 mod init;
+mod sha1;
 
 fn main() {
     match init::init("test") {
