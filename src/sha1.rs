@@ -91,5 +91,5 @@ pub fn sha1(input: &str) -> String {
     }
 
     // Final hash formated as a hex string
-    states.iter().map(|b| format!("{:02x}", b)).collect()
+    states.iter().map(|b| format!("{:08x}", b)).collect()
 }
