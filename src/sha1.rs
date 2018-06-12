@@ -93,3 +93,53 @@ pub fn sha1(input: &str) -> String {
     // Final hash formated as a hex string
     states.iter().map(|b| format!("{:08x}", b)).collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use sha1::sha1;
+
+    #[test]
+    fn test_sha1() {
+        assert_eq!(sha1("abc"), "a9993e364706816aba3e25717850c26c9cd0d89d");
+        assert_eq!(sha1(""), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
+        assert_eq!(
+            sha1("The quick brown fox jumps over the lazy dog"),
+            "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
+        );
+        assert_eq!(
+            sha1("The quick brown fox jumps over the lazy cog"),
+            "de9f2c7fd25e1b3afad3e85a0bd17d9b100db4b3"
+        );
+
+        assert_eq!(
+            sha1(
+                "A4j1pcn9Z8l0jzETQk9hVJjWE5dki7hd4Tk69B2aG60OGdifYMm1BNJ2PnDXz0\
+                 D5XwT7QzFZ9JLtKaxl0cMndNPbzStb3YRb4lnR94BAlapbQsRqoZBYyctywtx0\
+                 rkOYPbXboNusdd7PupOR3u1Mu71qNuMTgGO3xbO3YAhG4V8eyGGEBQxlObi0m6\
+                 jSZ3lNPghdsPDhsuIKfHCUpoSGK0YscCpk6T8zuVadR4KC4vXOfERglIh5ya3r\
+                 IxKNCXiborW7tLwhCQlqDmKvVG9fyK1fbwxif0R0h8pJQYo64FvF2Ev5EaPBZy\
+                 p9gfPfW1rvgyiKYHFaVes3cs7HDLku64JmaYk79mSpv8XrQoECOmkXhMjIL8U1\
+                 gCgpl7ruzkNICaKOc0FoQq5sSyCvH45Cm2qyIrviWVamf4aQ1nE3r7oM2LEpAw\
+                 l9d46b6x0XvA3lsdw5lHSpJ9nK0xCD95MXkgFJwT2RaNDxYJesQzHJJJcDz1u6\
+                 41znwx4K5onTObfaxMLfZe2LHtnvS9uhqD3gbRRVG9DefFxKnr3ZzJfXhVpsJu\
+                 qiogP96YEUXM6Le1UdUQqghG3fJiNmK4K0Llp1ocMHn7RzCPZpyQJydXMZxTsi\
+                 Rg9lk1nyTaTeYJVsw375YpMRuV45ZZxMk7RvGEyFhJHYcMEqkzSTh1KVqeUywS\
+                 RxQBFp4vB3aWAEU2dejEXIbmLrT4dAqcuSs7T9SsgXVzAmVNSmyCB4vtFaRh6o\
+                 OGseV0gqTNzUNcwTPDCQETlkuq0s3VD9j8m4IQymJ4T8EPgF5oAUgWviOiNwr7\
+                 JT0GGsNpCa5o1qZy2AbiL8NXRxExhj9aQ5x647O3w2QnylDtbYjCHQpM14obeF\
+                 OwThnKbKOHfMUuNoOuFYIcadRVjD0tJwTGOiwb4aDH70aFd6eN4Fnu0wHG62UN\
+                 EtEihhkQZfhohShVWcUO23LuLZj4aBIgY5hGJPZO7IImEYtb49rrZ1687EcvTA\
+                 LyhMMxMD"
+            ),
+            "32f3f879a843b8792f1574110d02d66aa04701ad"
+        );
+
+        assert_eq!(
+            sha1(
+                "This is a multi-line string litteral
+used as a test file sample!\n"
+            ),
+            "6bf58217d47b728b777fa2ea1545787587186fff"
+        );
+    }
+}
