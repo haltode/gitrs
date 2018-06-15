@@ -1,3 +1,17 @@
+// Resources used:
+//  * DEFLATE Compressed Data Format Specification version 1.3
+//  https://tools.ietf.org/html/rfc1951
+//  * puff: a simple inflate written to specify the deflate format unambiguously
+//  https://github.com/madler/zlib/blob/master/contrib/puff/puff.c
+//  * Canonical Huffman code
+//  https://en.wikipedia.org/wiki/Canonical_Huffman_code
+//  * ZLIB Compressed Data Format Specification version 3.3
+//  https://tools.ietf.org/html/rfc1950
+//  * An Explanation of the Deflate Algorithm
+//  https://www.zlib.net/feldspar.html
+
+
+// Defined by the deflate format
 const MAX_BITS: usize = 15;
 const MAX_L_CODES: usize = 286;
 const MAX_D_CODES: usize = 30;
@@ -10,12 +24,16 @@ enum Error {
 
 }
 
+// Instead of using a classic Huffman code with a tree datastructure, we will
+// be using a more compact one: a canonical Huffman code.
 struct HuffmanTable {
     count: [u16; MAX_BITS + 1],
     symbol: [u16; MAX_CODES],
 }
 
 impl HuffmanTable {
+    // Create the table to decode the canonical Huffman code described by the
+    // `length` array
     fn new(length: &[u16]) -> HuffmanTable {
         let mut table = HuffmanTable {
             count: [0; MAX_BITS + 1],
@@ -26,24 +44,28 @@ impl HuffmanTable {
             table.count[length[len] as usize] += 1;
         }
 
-        let mut left = 1;
+        // Check if the count is valid (one bit = 2x more codes)
+        let mut codes_left = 1;
         for len in 1..(MAX_BITS + 1) {
-            left <<= 1;
-            left -= table.count[len] as i32;
-            if left < 0 {
+            codes_left <<= 1;
+            codes_left -= table.count[len] as i32;
+            if codes_left < 0 {
                 panic!()
             }
         }
+
+        // Add symbols in sorted order (first by length, then by symbol) by
+        // generating an offset table
 
         let mut offset = [0; MAX_BITS + 1];
         for len in 1..MAX_BITS {
             offset[len + 1] = offset[len] + table.count[len];
         }
 
-        for symbol in 0..length.len() {
-            if length[symbol] != 0 {
-                let len = length[symbol];
-                table.symbol[offset[len as usize] as usize] = symbol as u16;
+        for sym in 0..length.len() {
+            let len = length[sym] as usize;
+            if len != 0 {
+                table.symbol[offset[len] as usize] = sym as u16;
                 offset[len as usize] += 1;
             }
         }
@@ -51,13 +73,13 @@ impl HuffmanTable {
         return table;
     }
 
-    fn decode_char(&self, state: &mut State) -> u16 {
+    fn decode_sym(&self, state: &mut State) -> u16 {
         let mut code = 0;
         let mut first = 0;
         let mut index = 0;
-        for len in 1..(MAX_BITS + 1) {
+        for bit in 1..(MAX_BITS + 1) {
             code |= state.get_bits(1);
-            let count = self.count[len];
+            let count = self.count[bit];
             if code < first + count {
                 return self.symbol[(index + (code - first)) as usize];
             }
@@ -71,6 +93,10 @@ impl HuffmanTable {
 }
 
 struct State {
+    // We store input data as bytes, but since compressed data blocks are not
+    // guaranteed to begin on a byte boundary, we need a buffer to hold unused
+    // bits from previous byte.
+
     input: Vec<u8>,
     input_idx: usize,
     bit_buf: u32,
@@ -93,13 +119,16 @@ impl State {
     fn get_bits(&mut self, need: u32) -> u16 {
         let mut val = self.bit_buf;
         while self.bit_cnt < need {
+            // Load a new byte
             let byte = self.input[self.input_idx] as u32;
             self.input_idx += 1;
             val |= byte << self.bit_cnt;
             self.bit_cnt += 8;
         }
+        // Keep only unused bits inside the buffer
         self.bit_buf = val >> need;
         self.bit_cnt -= need;
+        // Zero out unwanted bits
         return (val & ((1 << need) - 1)) as u16;
     }
 
@@ -123,56 +152,73 @@ impl State {
         }
     }
 
+    // RFC 1951 - Section 3.2.4
     fn non_compressed(&mut self) {
+        // Ignore bits in buffer until next byte boundary (these data blocks
+        // are byte-aligned)
         self.bit_buf = 0;
         self.bit_cnt = 0;
+
         let len = self.get_bits(16);
         let nlen = self.get_bits(16);
         if !nlen != len {
             panic!();
         }
+        // Non-compressed mode is as simple as reading `len` bytes
         for _ in 0..len {
             let byte = self.get_bits(8) as u8;
             self.output.push(byte);
         }
     }
 
+    // RFC 1951 - Section 3.2.5
     fn decompress_block(&mut self, len_table: &HuffmanTable, dist_table: &HuffmanTable) {
-        const LENS: [u16; 29] = [
-            3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99,
-            115, 131, 163, 195, 227, 258,
+        const EXTRA_LEN: [u16; 29] = [
+            3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51,
+            59, 67, 83, 99, 115, 131, 163, 195, 227, 258,
         ];
-        const LEXT: [u16; 29] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0
+        const EXTRA_BITS: [u16; 29] = [
+            0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,
+            4, 5, 5, 5, 5, 0
         ];
-        const DISTS: [u16; 30] = [
-            1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025,
-            1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
+        const EXTRA_DIST: [u16; 30] = [
+            1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385,
+            513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385,
+            24577,
         ];
-        const DEXT: [u16; 30] = [
-            0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12,
-            12, 13, 13,
+        const EXTRA_DBITS: [u16; 30] = [
+            0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9,
+            10, 10, 11, 11, 12, 12, 13, 13,
         ];
 
         loop {
-            let mut symbol = len_table.decode_char(self);
-            if symbol < 256 {
-                self.output.push(symbol as u8);
-            } else if symbol == 256 {
+            let mut symbol = len_table.decode_sym(self);
+            if symbol == 256 {
+                // End of block
                 break;
+            } else if symbol < 256 {
+                // Literal
+                self.output.push(symbol as u8);
             } else if symbol < 290 {
+                // Length/distance pair
+
+                // Get length
                 symbol -= 257;
-                if symbol as usize > LENS.len() {
+                if symbol as usize > EXTRA_LEN.len() {
                     panic!()
                 }
-                let mut len = LENS[symbol as usize] + self.get_bits(LEXT[symbol as usize] as u32);
+                let len = EXTRA_LEN[symbol as usize] +
+                    self.get_bits(EXTRA_BITS[symbol as usize] as u32);
 
-                symbol = dist_table.decode_char(self);
-                let dist = DISTS[symbol as usize] + self.get_bits(DEXT[symbol as usize] as u32);
-                while len > 0 {
+                // Get distance
+                symbol = dist_table.decode_sym(self);
+                let dist = EXTRA_DIST[symbol as usize] +
+                    self.get_bits(EXTRA_DBITS[symbol as usize] as u32);
+
+                // Copy `len` bytes from `dist` bytes back
+                for _ in 0..len {
                     let prev = self.output[self.output.len() - dist as usize];
                     self.output.push(prev);
-                    len -= 1;
                 }
             } else {
                 panic!();
@@ -180,15 +226,15 @@ impl State {
         }
     }
 
+    // RFC 1951 - Section 3.2.6
     fn fixed_huffman(&mut self) {
-        // TODO: find proper way to initialize things just once (not at every call)
         let mut length = [0u16; FIX_L_CODES];
         for sym in 0..FIX_L_CODES {
             length[sym] = match sym {
                 0...143 => 8,
                 144...255 => 9,
                 256...279 => 7,
-                280...287 => 8, // TODO: use constant in ..
+                280...287 => 8,
                 _ => unreachable!()
             };
         }
@@ -197,12 +243,13 @@ impl State {
 
         let len_table = HuffmanTable::new(&length);
         let dist_table = HuffmanTable::new(&dist);
-        // TODO: check tables content
 
         self.decompress_block(&len_table, &dist_table);
     }
 
+    // RFC 1951 - Section 3.2.7
     fn dynamic_huffman(&mut self) {
+        // Lengths of each table
         let nlen: usize = self.get_bits(5) as usize + 257;
         let ndist: usize = self.get_bits(5) as usize + 1;
         let ncode: usize = self.get_bits(4) as usize + 4;
@@ -210,7 +257,7 @@ impl State {
             panic!();
         }
 
-        // TODO: static?
+        // Build temporary table to read literal/length/distance afterwards
         const ORDER: [usize; 19] = [
             16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
         ];
@@ -218,18 +265,17 @@ impl State {
         for idx in 0..ncode {
             length[ORDER[idx]] = self.get_bits(3);
         }
-
         let len_table = HuffmanTable::new(&length);
 
+        // Get literal and length/distance
         let mut idx: usize = 0;
         while idx < nlen + ndist {
-            let mut symbol = len_table.decode_char(self);
+            let mut symbol = len_table.decode_sym(self);
             if symbol < 16 {
                 length[idx] = symbol;
                 idx += 1;
             } else {
                 let mut len = 0;
-                // TODO: use match?
                 if symbol == 16 {
                     if idx == 0 {
                         panic!();
@@ -245,10 +291,9 @@ impl State {
                 if idx + symbol as usize > nlen + ndist {
                     panic!();
                 }
-                while symbol > 0 {
+                for _ in 0..symbol {
                     length[idx] = len;
                     idx += 1;
-                    symbol -= 1;
                 }
             }
         }
