@@ -257,7 +257,7 @@ impl State {
             panic!();
         }
 
-        let len_table = HuffmanTable::new(&length);
+        let len_table = HuffmanTable::new(&length[..nlen]);
         let dist_table = HuffmanTable::new(&length[nlen..]);
 
         self.decompress_block(&len_table, &dist_table);
