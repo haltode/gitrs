@@ -18,10 +18,19 @@ const MAX_D_CODES: usize = 30;
 const MAX_CODES: usize = MAX_L_CODES + MAX_D_CODES;
 const FIX_L_CODES: usize = 288;
 
-// TODO: properly handle errors (custom types, ? operator, etc.)
-// remove all temporary panic!()
-enum Error {
-
+#[derive(Debug)]
+pub enum Error {
+    HuffmanTableTooBig,
+    InvalidBlockCodeHeader,
+    InvalidBlockSize,
+    InvalidBlockType,
+    InvalidDataHeader,
+    InvalidDistTooFar,
+    InvalidFixedCode,
+    MissingEndOfBlockCode,
+    OutOfCodes,
+    OutOfInput,
+    TooManyCodes,
 }
 
 // Instead of using a classic Huffman code with a tree datastructure, we will
@@ -34,7 +43,7 @@ struct HuffmanTable {
 impl HuffmanTable {
     // Create the table to decode the canonical Huffman code described by the
     // `length` array
-    fn new(length: &[u16]) -> HuffmanTable {
+    fn new(length: &[u16]) -> Result<HuffmanTable, Error> {
         let mut table = HuffmanTable {
             count: [0; MAX_BITS + 1],
             symbol: [0; MAX_CODES],
@@ -50,7 +59,7 @@ impl HuffmanTable {
             codes_left <<= 1;
             codes_left -= table.count[len] as i32;
             if codes_left < 0 {
-                panic!()
+                return Err(Error::TooManyCodes);
             }
         }
 
@@ -70,25 +79,25 @@ impl HuffmanTable {
             }
         }
 
-        return table;
+        return Ok(table);
     }
 
-    fn decode_sym(&self, state: &mut State) -> u16 {
+    fn decode_sym(&self, state: &mut State) -> Result<u16, Error> {
         let mut code = 0;
         let mut first = 0;
         let mut index = 0;
         for bit in 1..(MAX_BITS + 1) {
-            code |= state.get_bits(1);
+            code |= state.get_bits(1)?;
             let count = self.count[bit];
             if code < first + count {
-                return self.symbol[(index + (code - first)) as usize];
+                return Ok(self.symbol[(index + (code - first)) as usize]);
             }
             index += count;
             first += count;
             first <<= 1;
             code <<= 1;
         }
-        panic!()
+        return Err(Error::OutOfCodes);
     }
 }
 
@@ -116,9 +125,12 @@ impl State {
         }
     }
 
-    fn get_bits(&mut self, need: u32) -> u16 {
+    fn get_bits(&mut self, need: u32) -> Result<u16, Error> {
         let mut val = self.bit_buf;
         while self.bit_cnt < need {
+            if self.input_idx == self.input.len() {
+                return Err(Error::OutOfInput);
+            }
             // Load a new byte
             let byte = self.input[self.input_idx] as u32;
             self.input_idx += 1;
@@ -129,50 +141,55 @@ impl State {
         self.bit_buf = val >> need;
         self.bit_cnt -= need;
         // Zero out unwanted bits
-        return (val & ((1 << need) - 1)) as u16;
+        return Ok((val & ((1 << need) - 1)) as u16);
     }
 
-    fn decompress(&mut self) {
-        // TODO: check header
-        self.get_bits(8);
-        self.get_bits(8);
+    fn decompress(&mut self) -> Result<(), Error> {
+        // Validate header (CM = 8 CINFO = 7 FCHECK = 1 FDICT = 0 FLEVEL = 0)
+        let cmf = self.get_bits(8)?;
+        let flg = self.get_bits(8)?;
+        if cmf != 0x78 || flg != 1 {
+            return Err(Error::InvalidDataHeader);
+        }
         loop {
-            let end_of_file = self.get_bits(1);
-            let compress_mode = self.get_bits(2);
+            let end_of_file = self.get_bits(1)?;
+            let compress_mode = self.get_bits(2)?;
             match compress_mode {
                 0 => self.non_compressed(),
                 1 => self.fixed_huffman(),
                 2 => self.dynamic_huffman(),
-                3 => panic!(),
+                3 => Err(Error::InvalidBlockType),
                 _ => unreachable!(),
-            };
+            }?;
             if end_of_file == 1 {
                 break;
             }
         }
+        return Ok(());
     }
 
     // RFC 1951 - Section 3.2.4
-    fn non_compressed(&mut self) {
+    fn non_compressed(&mut self) -> Result<(), Error> {
         // Ignore bits in buffer until next byte boundary (these data blocks
         // are byte-aligned)
         self.bit_buf = 0;
         self.bit_cnt = 0;
 
-        let len = self.get_bits(16);
-        let nlen = self.get_bits(16);
+        let len = self.get_bits(16)?;
+        let nlen = self.get_bits(16)?;
         if !nlen != len {
-            panic!();
+            return Err(Error::InvalidBlockSize);
         }
         // Non-compressed mode is as simple as reading `len` bytes
         for _ in 0..len {
-            let byte = self.get_bits(8) as u8;
+            let byte = self.get_bits(8)? as u8;
             self.output.push(byte);
         }
+        return Ok(());
     }
 
     // RFC 1951 - Section 3.2.5
-    fn decompress_block(&mut self, len_table: &HuffmanTable, dist_table: &HuffmanTable) {
+    fn decompress_block(&mut self, len_table: &HuffmanTable, dist_table: &HuffmanTable) -> Result<(), Error> {
         const EXTRA_LEN: [u16; 29] = [
             3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51,
             59, 67, 83, 99, 115, 131, 163, 195, 227, 258,
@@ -192,7 +209,7 @@ impl State {
         ];
 
         loop {
-            let mut symbol = len_table.decode_sym(self);
+            let mut symbol = len_table.decode_sym(self)?;
             if symbol == 256 {
                 // End of block
                 break;
@@ -205,29 +222,32 @@ impl State {
                 // Get length
                 symbol -= 257;
                 if symbol as usize > EXTRA_LEN.len() {
-                    panic!()
+                    return Err(Error::InvalidFixedCode);
                 }
                 let len = EXTRA_LEN[symbol as usize] +
-                    self.get_bits(EXTRA_BITS[symbol as usize] as u32);
+                    self.get_bits(EXTRA_BITS[symbol as usize] as u32)?;
 
                 // Get distance
-                symbol = dist_table.decode_sym(self);
+                symbol = dist_table.decode_sym(self)?;
                 let dist = EXTRA_DIST[symbol as usize] +
-                    self.get_bits(EXTRA_DBITS[symbol as usize] as u32);
+                    self.get_bits(EXTRA_DBITS[symbol as usize] as u32)?;
 
                 // Copy `len` bytes from `dist` bytes back
+                let dist = dist as usize;
+                if dist > self.output.len() {
+                    return Err(Error::InvalidDistTooFar);
+                }
                 for _ in 0..len {
-                    let prev = self.output[self.output.len() - dist as usize];
+                    let prev = self.output[self.output.len() - dist];
                     self.output.push(prev);
                 }
-            } else {
-                panic!();
             }
         }
+        return Ok(());
     }
 
     // RFC 1951 - Section 3.2.6
-    fn fixed_huffman(&mut self) {
+    fn fixed_huffman(&mut self) -> Result<(), Error> {
         let mut length = [0u16; FIX_L_CODES];
         for sym in 0..FIX_L_CODES {
             length[sym] = match sym {
@@ -241,20 +261,21 @@ impl State {
 
         let dist = [5u16; MAX_D_CODES];
 
-        let len_table = HuffmanTable::new(&length);
-        let dist_table = HuffmanTable::new(&dist);
+        let len_table = HuffmanTable::new(&length)?;
+        let dist_table = HuffmanTable::new(&dist)?;
 
-        self.decompress_block(&len_table, &dist_table);
+        self.decompress_block(&len_table, &dist_table)?;
+        return Ok(());
     }
 
     // RFC 1951 - Section 3.2.7
-    fn dynamic_huffman(&mut self) {
+    fn dynamic_huffman(&mut self) -> Result<(), Error> {
         // Lengths of each table
-        let nlen: usize = self.get_bits(5) as usize + 257;
-        let ndist: usize = self.get_bits(5) as usize + 1;
-        let ncode: usize = self.get_bits(4) as usize + 4;
+        let nlen: usize = self.get_bits(5)? as usize + 257;
+        let ndist: usize = self.get_bits(5)? as usize + 1;
+        let ncode: usize = self.get_bits(4)? as usize + 4;
         if nlen > MAX_L_CODES || ndist > MAX_D_CODES {
-            panic!();
+            return Err(Error::HuffmanTableTooBig);
         }
 
         // Build temporary table to read literal/length/distance afterwards
@@ -263,14 +284,14 @@ impl State {
         ];
         let mut length = [0; MAX_CODES];
         for idx in 0..ncode {
-            length[ORDER[idx]] = self.get_bits(3);
+            length[ORDER[idx]] = self.get_bits(3)?;
         }
-        let len_table = HuffmanTable::new(&length);
+        let len_table = HuffmanTable::new(&length)?;
 
         // Get literal and length/distance
         let mut idx: usize = 0;
         while idx < nlen + ndist {
-            let mut symbol = len_table.decode_sym(self);
+            let mut symbol = len_table.decode_sym(self)?;
             if symbol < 16 {
                 length[idx] = symbol;
                 idx += 1;
@@ -278,18 +299,18 @@ impl State {
                 let mut len = 0;
                 if symbol == 16 {
                     if idx == 0 {
-                        panic!();
+                        return Err(Error::InvalidBlockCodeHeader);
                     }
                     len = length[idx - 1];
-                    symbol = 3 + self.get_bits(2);
+                    symbol = 3 + self.get_bits(2)?;
                 } else if symbol == 17 {
-                    symbol = 3 + self.get_bits(3);
+                    symbol = 3 + self.get_bits(3)?;
                 } else {
-                    symbol = 11 + self.get_bits(7);
+                    symbol = 11 + self.get_bits(7)?;
                 }
 
                 if idx + symbol as usize > nlen + ndist {
-                    panic!();
+                    return Err(Error::InvalidBlockCodeHeader);
                 }
                 for _ in 0..symbol {
                     length[idx] = len;
@@ -299,18 +320,22 @@ impl State {
         }
 
         if length[256] == 0 {
-            panic!();
+            return Err(Error::MissingEndOfBlockCode);
         }
 
-        let len_table = HuffmanTable::new(&length[..nlen]);
-        let dist_table = HuffmanTable::new(&length[nlen..]);
+        let len_table = HuffmanTable::new(&length[..nlen])?;
+        let dist_table = HuffmanTable::new(&length[nlen..])?;
 
-        self.decompress_block(&len_table, &dist_table);
+        self.decompress_block(&len_table, &dist_table)?;
+        return Ok(());
     }
 }
 
 pub fn decompress(input: Vec<u8>) -> Vec<u8> {
     let mut state = State::new(input);
-    state.decompress();
+    if let Err(why) = state.decompress() {
+        println!("Error while decompressing: {:?}", why);
+        state.output = Vec::new();
+    }
     return state.output;
 }
