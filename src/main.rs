@@ -2,6 +2,7 @@ mod init;
 mod sha1;
 mod decompress;
 mod compress;
+mod hash_object;
 
 use std::fs::File;
 use std::io::Read;
