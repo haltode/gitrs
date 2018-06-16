@@ -1,6 +1,7 @@
 mod init;
 mod sha1;
 mod decompress;
+mod compress;
 
 use std::fs::File;
 use std::io::Read;
