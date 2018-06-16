@@ -7,6 +7,16 @@ fn convert_u16_to_u8(x: u16) -> [u8; 2] {
     ]
 }
 
+// Big endian this time
+fn convert_u32_to_u8(x: u32) -> [u8; 4] {
+    [
+        ((x >> 24) & 0xff) as u8,
+        ((x >> 16) & 0xff) as u8,
+        ((x >> 8) & 0xff) as u8,
+        (x & 0xff) as u8,
+    ]
+}
+
 #[derive(Debug)]
 enum Error {
     OutOfInput,
@@ -34,6 +44,8 @@ impl State {
         // :D
         let nb_bytes = self.input.len();
         self.non_compressed(nb_bytes)?;
+
+        self.add_checksum();
         return Ok(());
     }
 
@@ -71,6 +83,20 @@ impl State {
 
     fn dynamic_huffman(&mut self) -> Result<(), Error> {
         return Ok(());
+    }
+
+    // Adler-32 checksum
+    fn add_checksum(&mut self) {
+        let mut a: u32 = 1;
+        let mut b: u32 = 0;
+
+        for byte in 0..self.input.len() {
+            a = (a + self.input[byte] as u32) % 65521;
+            b = (b + a) % 65521;
+        }
+
+        let res = (b << 16) | a;
+        self.output.extend_from_slice(&convert_u32_to_u8(res));
     }
 }
 
