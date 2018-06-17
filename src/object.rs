@@ -2,7 +2,7 @@ use zlib;
 
 use std::fs;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str;
 
 #[derive(Debug)]
