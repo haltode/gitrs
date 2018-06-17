@@ -1,5 +1,5 @@
-use compress;
 use sha1;
+use zlib;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -17,7 +17,7 @@ pub fn hash_object(data: &str, obj_type: &str, write: bool) -> Result<String, io
             println!("hash_object: file already exists, ignoring write");
         } else {
             fs::create_dir_all(&dir)?;
-            fs::write(&file, compress::compress(data.as_bytes().to_vec()))?;
+            fs::write(&file, zlib::compress(data.as_bytes().to_vec()))?;
         }
     }
 

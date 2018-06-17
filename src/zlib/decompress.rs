@@ -82,7 +82,7 @@ impl HuffmanTable {
         return Ok(table);
     }
 
-    fn decode_sym(&self, state: &mut State) -> Result<u16, Error> {
+    fn decode_sym(&self, state: &mut Decoder) -> Result<u16, Error> {
         let mut code = 0;
         let mut first = 0;
         let mut index = 0;
@@ -101,7 +101,7 @@ impl HuffmanTable {
     }
 }
 
-struct State {
+pub struct Decoder {
     // We store input data as bytes, but since compressed data blocks are not
     // guaranteed to begin on a byte boundary, we need a buffer to hold unused
     // bits from previous byte.
@@ -111,12 +111,12 @@ struct State {
     bit_buf: u32,
     bit_cnt: u32,
 
-    output: Vec<u8>,
+    pub output: Vec<u8>,
 }
 
-impl State {
-    fn new(input: Vec<u8>) -> State {
-        State {
+impl Decoder {
+    pub fn new(input: Vec<u8>) -> Decoder {
+        Decoder {
             input: input,
             input_idx: 0,
             bit_buf: 0,
@@ -125,26 +125,7 @@ impl State {
         }
     }
 
-    fn get_bits(&mut self, need: u32) -> Result<u16, Error> {
-        let mut val = self.bit_buf;
-        while self.bit_cnt < need {
-            if self.input_idx == self.input.len() {
-                return Err(Error::OutOfInput);
-            }
-            // Load a new byte
-            let byte = self.input[self.input_idx] as u32;
-            self.input_idx += 1;
-            val |= byte << self.bit_cnt;
-            self.bit_cnt += 8;
-        }
-        // Keep only unused bits inside the buffer
-        self.bit_buf = val >> need;
-        self.bit_cnt -= need;
-        // Zero out unwanted bits
-        return Ok((val & ((1 << need) - 1)) as u16);
-    }
-
-    fn decompress(&mut self) -> Result<(), Error> {
+    pub fn decompress(&mut self) -> Result<(), Error> {
         // Validate header (CM = 8 CINFO = 7 FCHECK = 1 FDICT = 0 FLEVEL = 0)
         let cmf = self.get_bits(8)?;
         let flg = self.get_bits(8)?;
@@ -166,6 +147,25 @@ impl State {
             }
         }
         return Ok(());
+    }
+
+    fn get_bits(&mut self, need: u32) -> Result<u16, Error> {
+        let mut val = self.bit_buf;
+        while self.bit_cnt < need {
+            if self.input_idx == self.input.len() {
+                return Err(Error::OutOfInput);
+            }
+            // Load a new byte
+            let byte = self.input[self.input_idx] as u32;
+            self.input_idx += 1;
+            val |= byte << self.bit_cnt;
+            self.bit_cnt += 8;
+        }
+        // Keep only unused bits inside the buffer
+        self.bit_buf = val >> need;
+        self.bit_cnt -= need;
+        // Zero out unwanted bits
+        return Ok((val & ((1 << need) - 1)) as u16);
     }
 
     // RFC 1951 - Section 3.2.4
@@ -329,13 +329,4 @@ impl State {
         self.decompress_block(&len_table, &dist_table)?;
         return Ok(());
     }
-}
-
-pub fn decompress(input: Vec<u8>) -> Vec<u8> {
-    let mut state = State::new(input);
-    if let Err(why) = state.decompress() {
-        println!("Error while decompressing: {:?}", why);
-        state.output = Vec::new();
-    }
-    return state.output;
 }

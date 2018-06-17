@@ -18,27 +18,27 @@ fn convert_u32_to_u8(x: u32) -> [u8; 4] {
 }
 
 #[derive(Debug)]
-enum Error {
+pub enum Error {
     OutOfInput,
 }
 
-struct State {
+pub struct Encoder {
     input: Vec<u8>,
     input_idx: usize,
 
-    output: Vec<u8>,
+    pub output: Vec<u8>,
 }
 
-impl State {
-    fn new(input: Vec<u8>) -> State {
-        State {
+impl Encoder {
+    pub fn new(input: Vec<u8>) -> Encoder {
+        Encoder {
             input: input,
             input_idx: 0,
             output: Vec::new(),
         }
     }
 
-    fn compress(&mut self) -> Result<(), Error> {
+    pub fn compress(&mut self) -> Result<(), Error> {
         self.write_header();
 
         // :D
@@ -98,13 +98,4 @@ impl State {
         let res = (b << 16) | a;
         self.output.extend_from_slice(&convert_u32_to_u8(res));
     }
-}
-
-pub fn compress(input: Vec<u8>) -> Vec<u8> {
-    let mut state = State::new(input);
-    if let Err(why) = state.compress() {
-        println!("Error while compressing: {:?}", why);
-        state.output = Vec::new();
-    }
-    return state.output;
 }

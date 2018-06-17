@@ -1,7 +1,6 @@
 mod init;
 mod sha1;
-mod decompress;
-mod compress;
+mod zlib;
 mod hash_object;
 
 use std::fs::File;
@@ -19,5 +18,5 @@ fn main() {
 
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer).unwrap();
-    println!("{:?}", decompress::decompress(buffer));
+    println!("{:?}", zlib::decompress(buffer));
 }
