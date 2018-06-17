@@ -1,5 +1,6 @@
 use sha1;
 use zlib;
+
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -14,7 +15,7 @@ pub fn hash_object(data: &str, obj_type: &str, write: bool) -> Result<String, io
         let file = Path::new(&dir).join(&hash[2..]);
 
         if file.exists() {
-            println!("hash_object: file already exists, ignoring write");
+            println!("hash_object: file already exists (ignoring write)");
         } else {
             fs::create_dir_all(&dir)?;
             fs::write(&file, zlib::compress(data.as_bytes().to_vec()))?;

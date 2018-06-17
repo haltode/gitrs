@@ -1,9 +1,9 @@
+mod cli;
+mod hash_object;
 mod init;
+mod object;
 mod sha1;
 mod zlib;
-mod hash_object;
-mod cli;
-mod object;
 
 use std::env;
 
@@ -31,8 +31,8 @@ fn main() {
                 let data = &args[2];
 
                 let default_obj_type = String::from("blob");
-                let obj_type = cli::get_flag_value(&args, "--type", "-t")
-                    .unwrap_or(default_obj_type);
+                let obj_type =
+                    cli::get_flag_value(&args, "--type", "-t").unwrap_or(default_obj_type);
 
                 let write = cli::has_flag(&args, "--write", "-w");
 

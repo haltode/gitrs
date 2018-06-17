@@ -1,10 +1,7 @@
 // Careful with the bits order, we want little endian format
 // (see RFC 1951 - Section 3.1)
 fn convert_u16_to_u8(x: u16) -> [u8; 2] {
-    [
-        (x & 0xff) as u8,
-        ((x >> 8) & 0xff) as u8,
-    ]
+    [(x & 0xff) as u8, ((x >> 8) & 0xff) as u8]
 }
 
 // Big endian this time

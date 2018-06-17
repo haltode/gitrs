@@ -10,7 +10,6 @@
 //  * An Explanation of the Deflate Algorithm
 //  https://www.zlib.net/feldspar.html
 
-
 // Defined by the deflate format
 const MAX_BITS: usize = 15;
 const MAX_L_CODES: usize = 286;
@@ -105,7 +104,6 @@ pub struct Decoder {
     // We store input data as bytes, but since compressed data blocks are not
     // guaranteed to begin on a byte boundary, we need a buffer to hold unused
     // bits from previous byte.
-
     input: Vec<u8>,
     input_idx: usize,
     bit_buf: u32,
@@ -189,23 +187,25 @@ impl Decoder {
     }
 
     // RFC 1951 - Section 3.2.5
-    fn decompress_block(&mut self, len_table: &HuffmanTable, dist_table: &HuffmanTable) -> Result<(), Error> {
+    fn decompress_block(
+        &mut self,
+        len_table: &HuffmanTable,
+        dist_table: &HuffmanTable,
+    ) -> Result<(), Error> {
         const EXTRA_LEN: [u16; 29] = [
-            3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51,
-            59, 67, 83, 99, 115, 131, 163, 195, 227, 258,
+            3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99,
+            115, 131, 163, 195, 227, 258,
         ];
         const EXTRA_BITS: [u16; 29] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,
-            4, 5, 5, 5, 5, 0
+            0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0
         ];
         const EXTRA_DIST: [u16; 30] = [
-            1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385,
-            513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385,
-            24577,
+            1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025,
+            1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
         ];
         const EXTRA_DBITS: [u16; 30] = [
-            0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9,
-            10, 10, 11, 11, 12, 12, 13, 13,
+            0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12,
+            12, 13, 13,
         ];
 
         loop {
@@ -224,13 +224,13 @@ impl Decoder {
                 if symbol as usize > EXTRA_LEN.len() {
                     return Err(Error::InvalidFixedCode);
                 }
-                let len = EXTRA_LEN[symbol as usize] +
-                    self.get_bits(EXTRA_BITS[symbol as usize] as u32)?;
+                let len =
+                    EXTRA_LEN[symbol as usize] + self.get_bits(EXTRA_BITS[symbol as usize] as u32)?;
 
                 // Get distance
                 symbol = dist_table.decode_sym(self)?;
-                let dist = EXTRA_DIST[symbol as usize] +
-                    self.get_bits(EXTRA_DBITS[symbol as usize] as u32)?;
+                let dist = EXTRA_DIST[symbol as usize]
+                    + self.get_bits(EXTRA_DBITS[symbol as usize] as u32)?;
 
                 // Copy `len` bytes from `dist` bytes back
                 let dist = dist as usize;
@@ -255,7 +255,7 @@ impl Decoder {
                 144...255 => 9,
                 256...279 => 7,
                 280...287 => 8,
-                _ => unreachable!()
+                _ => unreachable!(),
             };
         }
 

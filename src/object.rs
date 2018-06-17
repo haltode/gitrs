@@ -1,7 +1,8 @@
 use zlib;
+
 use std::fs;
 use std::io;
-use std::path;
+use std::path::Path;
 use std::str;
 
 #[derive(Debug)]
@@ -22,8 +23,7 @@ pub fn parse(hash_prefix: &str) -> Result<Object, ObjError> {
     let data = fs::read(path).map_err(ObjError::IoError)?;
     let decompressed_data = zlib::decompress(data);
 
-    let data = str::from_utf8(&decompressed_data)
-        .expect("invalid utf-8 in object data");
+    let data = str::from_utf8(&decompressed_data).expect("invalid utf-8 in object data");
 
     let header_idx = data.find('\x00')
         .expect("missing null byte in object header");
@@ -31,9 +31,11 @@ pub fn parse(hash_prefix: &str) -> Result<Object, ObjError> {
 
     let mut iter = header.split_whitespace();
     let obj_type = iter.next()
-        .expect("missing type in object header").to_string();
+        .expect("missing type in object header")
+        .to_string();
     let obj_size = iter.next()
-        .expect("missing size in object header").parse::<usize>()
+        .expect("missing size in object header")
+        .parse::<usize>()
         .expect("cannot convert size in object header");
     let data = data[1..].to_string();
 
@@ -44,12 +46,12 @@ pub fn parse(hash_prefix: &str) -> Result<Object, ObjError> {
     })
 }
 
-fn object_path(hash_prefix: &str) -> Result<path::PathBuf, ObjError> {
+fn object_path(hash_prefix: &str) -> Result<PathBuf, ObjError> {
     if hash_prefix.len() < 2 {
         return Err(ObjError::HashPrefixTooShort);
     }
 
-    let dir = path::Path::new(".git").join("objects").join(&hash_prefix[..2]);
+    let dir = Path::new(".git").join("objects").join(&hash_prefix[..2]);
     let filename = &hash_prefix[2..];
     for file in fs::read_dir(dir).map_err(ObjError::IoError)? {
         let path = file.map_err(ObjError::IoError)?.path();
