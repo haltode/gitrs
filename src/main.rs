@@ -2,21 +2,52 @@ mod init;
 mod sha1;
 mod zlib;
 mod hash_object;
+mod cli;
 
-use std::fs::File;
-use std::io::Read;
+use std::env;
 
 fn main() {
-    match init::init("test") {
-        Ok(_) => {}
-        Err(why) => println!("Could not initialize git repository: {:?}", why),
-    };
+    let args: Vec<String> = env::args().collect();
+    if args.len() == 1 {
+        print_help();
+        return;
+    }
 
-    let file_name =
-        "/home/haltode/projects/gitrs/.git/objects/5b/2d31aeb49be35a7a61446dfe259c69f1e5ca06";
-    let mut f = File::open(file_name).unwrap();
+    let cmd = &args[1];
+    match &cmd[..] {
+        "init" => {
+            let default_path = String::from("");
+            let path = args.get(2).unwrap_or(&default_path);
+            if let Err(why) = init::init(path) {
+                println!("Could not initialize git repository: {:?}", why);
+            }
+        }
 
-    let mut buffer = Vec::new();
-    f.read_to_end(&mut buffer).unwrap();
-    println!("{:?}", zlib::decompress(buffer));
+        "hash_object" => {
+            if args.len() == 2 {
+                println!("hash_object: command takes a 'data' argument.");
+            } else {
+                let data = &args[2];
+
+                let default_obj_type = String::from("blob");
+                let obj_type = cli::get_flag_value(&args, "--type", "-t")
+                    .unwrap_or(default_obj_type);
+
+                let write = cli::has_flag(&args, "--write", "-w");
+
+                match hash_object::hash_object(data, &obj_type, write) {
+                    Ok(hash) => println!("{}", hash),
+                    Err(why) => println!("Cannot hash object: {}", why),
+                }
+            }
+        }
+
+        "help" | _ => {
+            print_help();
+        }
+    }
+}
+
+fn print_help() {
+    println!("TODO: write help!");
 }
