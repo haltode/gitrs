@@ -3,6 +3,7 @@ mod sha1;
 mod zlib;
 mod hash_object;
 mod cli;
+mod object;
 
 use std::env;
 
