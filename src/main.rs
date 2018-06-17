@@ -1,3 +1,4 @@
+mod cat_file;
 mod cli;
 mod hash_object;
 mod init;
@@ -39,6 +40,23 @@ fn main() {
                 match hash_object::hash_object(data, &obj_type, write) {
                     Ok(hash) => println!("{}", hash),
                     Err(why) => println!("Cannot hash object: {}", why),
+                }
+            }
+        }
+
+        "cat_file" => {
+            if args.len() <= 3 {
+                println!("cat_file: command takes 'hash' and 'mode' as arguments.");
+            } else {
+                let hash_prefix = &args[2];
+                if cli::has_flag(&args, "--type", "-t") {
+                    cat_file::cat_file(hash_prefix, "type");
+                } else if cli::has_flag(&args, "--size", "-s") {
+                    cat_file::cat_file(hash_prefix, "size");
+                } else if cli::has_flag(&args, "--print", "-p") {
+                    cat_file::cat_file(hash_prefix, "print");
+                } else {
+                    println!("cat_file: unknown 'mode' option.");
                 }
             }
         }

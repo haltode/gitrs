@@ -13,9 +13,9 @@ pub enum ObjError {
 }
 
 pub struct Object {
-    obj_type: String,
-    obj_size: usize,
-    data: String,
+    pub obj_type: String,
+    pub obj_size: usize,
+    pub data: String,
 }
 
 pub fn parse(hash_prefix: &str) -> Result<Object, ObjError> {
