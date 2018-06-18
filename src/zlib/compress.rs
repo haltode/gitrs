@@ -1,18 +1,4 @@
-// Careful with the bits order, we want little endian format
-// (see RFC 1951 - Section 3.1)
-fn convert_u16_to_u8(x: u16) -> [u8; 2] {
-    [(x & 0xff) as u8, ((x >> 8) & 0xff) as u8]
-}
-
-// Big endian this time
-fn convert_u32_to_u8(x: u32) -> [u8; 4] {
-    [
-        ((x >> 24) & 0xff) as u8,
-        ((x >> 16) & 0xff) as u8,
-        ((x >> 8) & 0xff) as u8,
-        (x & 0xff) as u8,
-    ]
-}
+use bits::{big_endian, little_endian};
 
 #[derive(Debug)]
 pub enum Error {
@@ -63,8 +49,8 @@ impl Encoder {
         }
 
         let mut header = Vec::new();
-        header.extend_from_slice(&convert_u16_to_u8(nb_bytes as u16));
-        header.extend_from_slice(&convert_u16_to_u8(!nb_bytes as u16));
+        header.extend_from_slice(&little_endian::u16_to_u8(nb_bytes as u16));
+        header.extend_from_slice(&little_endian::u16_to_u8(!nb_bytes as u16));
 
         let data = &self.input[start..end];
 
@@ -93,6 +79,6 @@ impl Encoder {
         }
 
         let res = (b << 16) | a;
-        self.output.extend_from_slice(&convert_u32_to_u8(res));
+        self.output.extend_from_slice(&big_endian::u32_to_u8(res));
     }
 }

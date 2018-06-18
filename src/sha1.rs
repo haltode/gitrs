@@ -1,22 +1,7 @@
+use bits::big_endian;
+
 const BLOCK_SIZE: usize = 512 / 8;
 const ROUND_SIZE: usize = 80;
-
-fn convert_u64_to_u8(x: u64) -> [u8; 8] {
-    [
-        ((x >> 56) & 0xff) as u8,
-        ((x >> 48) & 0xff) as u8,
-        ((x >> 40) & 0xff) as u8,
-        ((x >> 32) & 0xff) as u8,
-        ((x >> 24) & 0xff) as u8,
-        ((x >> 16) & 0xff) as u8,
-        ((x >> 8) & 0xff) as u8,
-        (x & 0xff) as u8,
-    ]
-}
-
-fn convert_u8_to_u32(b1: u8, b2: u8, b3: u8, b4: u8) -> u32 {
-    (b1 as u32) << 24 | (b2 as u32) << 16 | (b3 as u32) << 8 | (b4 as u32)
-}
 
 // Format: input (as bytes) + padding + 64-bit message length (in bits)
 fn sha1_format(input: &str) -> Vec<u8> {
@@ -26,7 +11,7 @@ fn sha1_format(input: &str) -> Vec<u8> {
     fmt_input.extend(input.as_bytes());
     fmt_input.push(0x80);
     fmt_input.extend(vec![0; 63 - ((input_size + 8) % 64)]);
-    fmt_input.extend_from_slice(&convert_u64_to_u8(8 * (input_size as u64)));
+    fmt_input.extend_from_slice(&big_endian::u64_to_u8(8 * (input_size as u64)));
 
     fmt_input
 }
@@ -44,12 +29,12 @@ pub fn sha1(input: &str) -> String {
 
     for block in sha1_format(input).chunks(BLOCK_SIZE) {
         for i in 0..16 {
-            w[i] = convert_u8_to_u32(
+            w[i] = big_endian::u8_to_u32([
                 block[i * 4],
                 block[i * 4 + 1],
                 block[i * 4 + 2],
                 block[i * 4 + 3],
-            );
+            ]);
         }
         for i in 16..80 {
             w[i] = w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16];

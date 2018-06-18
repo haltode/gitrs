@@ -1,3 +1,4 @@
+mod bits;
 mod cat_file;
 mod cli;
 mod hash_object;
