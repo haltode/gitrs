@@ -68,6 +68,12 @@ fn main() {
             index::ls_files(stage);
         }
 
+        "status" => {
+            if let Err(why) = index::status() {
+                println!("Could not retrieve status: {}", why);
+            }
+        }
+
         "help" | _ => {
             print_help();
         }
