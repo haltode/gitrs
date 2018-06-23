@@ -7,6 +7,7 @@ mod init;
 mod ls_files;
 mod object;
 mod sha1;
+mod status;
 mod zlib;
 
 use std::env;
@@ -70,7 +71,7 @@ fn main() {
         }
 
         "status" => {
-            if let Err(why) = index::status() {
+            if let Err(why) = status::status() {
                 println!("Could not retrieve status: {}", why);
             }
         }
