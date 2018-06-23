@@ -75,8 +75,22 @@ pub fn sha1(input: &str) -> String {
         states[4] = states[4].wrapping_add(e);
     }
 
-    // Final hash formated as a hex string
-    states.iter().map(|b| format!("{:08x}", b)).collect()
+    return hash_from_u32(&states);
+}
+
+// Final hash formated as a hex string
+pub fn hash_from_u32(hash: &[u32; 5]) -> String {
+    hash.iter().map(|b| format!("{:08x}", b)).collect()
+}
+
+pub fn hash_from_u8_slice(hash: &[u8]) -> String {
+    let mut states = [0u32; 5];
+    let mut idx = 0;
+    for s in 0..5 {
+        states[s] = big_endian::u8_slice_to_u32(&hash[idx..]);
+        idx += 4;
+    }
+    return hash_from_u32(&states);
 }
 
 #[cfg(test)]

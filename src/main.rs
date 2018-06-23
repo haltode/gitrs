@@ -2,6 +2,7 @@ mod bits;
 mod cat_file;
 mod cli;
 mod hash_object;
+mod index;
 mod init;
 mod object;
 mod sha1;

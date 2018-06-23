@@ -24,6 +24,18 @@ pub mod big_endian {
     pub fn u8_to_u32(x: [u8; 4]) -> u32 {
         (x[0] as u32) << 24 | (x[1] as u32) << 16 | (x[2] as u32) << 8 | (x[3] as u32)
     }
+
+    pub fn u8_slice_to_u32(x: &[u8]) -> u32 {
+        u8_to_u32([x[0], x[1], x[2], x[3]])
+    }
+
+    pub fn u8_to_u16(x: [u8; 2]) -> u16 {
+        (x[0] as u16) << 8 | (x[1] as u16)
+    }
+
+    pub fn u8_slice_to_u16(x: &[u8]) -> u16 {
+        u8_to_u16([x[0], x[1]])
+    }
 }
 
 pub mod little_endian {
