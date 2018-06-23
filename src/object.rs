@@ -1,9 +1,9 @@
-use zlib;
-
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::str;
+
+use zlib;
 
 #[derive(Debug)]
 pub enum ObjError {

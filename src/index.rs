@@ -2,12 +2,12 @@
 //  * git/Documentation/technical/index-format.txt
 //  https://github.com/git/git/blob/master/Documentation/technical/index-format.txt
 
-use bits::big_endian;
-use sha1;
-
 use std::fs;
 use std::path::Path;
 use std::str;
+
+use bits::big_endian;
+use sha1;
 
 pub struct Entry {
     ctime_sec: u32,

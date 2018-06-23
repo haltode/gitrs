@@ -1,9 +1,9 @@
-use sha1;
-use zlib;
-
 use std::fs;
 use std::io;
 use std::path::Path;
+
+use sha1;
+use zlib;
 
 pub fn hash_object(data: &str, obj_type: &str, write: bool) -> Result<String, io::Error> {
     let header = format!("{} {}", obj_type, data.len());

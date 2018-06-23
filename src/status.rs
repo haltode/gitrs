@@ -1,10 +1,10 @@
-use hash_object;
-use index;
-
 use std::collections::VecDeque;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+
+use hash_object;
+use index;
 
 pub fn status() -> Result<(), io::Error> {
     // TODO: show untracked files
