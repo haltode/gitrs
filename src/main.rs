@@ -4,6 +4,7 @@ mod cli;
 mod hash_object;
 mod index;
 mod init;
+mod ls_files;
 mod object;
 mod sha1;
 mod zlib;
@@ -65,7 +66,7 @@ fn main() {
 
         "ls_files" => {
             let stage = cli::has_flag(&args, "--stage", "-s");
-            index::ls_files(stage);
+            ls_files::ls_files(stage);
         }
 
         "status" => {

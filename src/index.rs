@@ -12,23 +12,23 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::str;
 
-struct Entry {
+pub struct Entry {
     ctime_sec: u32,
     ctime_nan: u32,
     mtime_sec: u32,
     mtime_nan: u32,
     dev: u32,
     ino: u32,
-    mode: u32,
+    pub mode: u32,
     uid: u32,
     gid: u32,
     size: u32,
-    hash: String,
-    flags: u16,
-    path: String,
+    pub hash: String,
+    pub flags: u16,
+    pub path: String,
 }
 
-fn get_entries() -> Vec<Entry> {
+pub fn get_entries() -> Vec<Entry> {
     let bytes = fs::read(Path::new(".git").join("index")).expect("cannot read index");
     let signature = str::from_utf8(&bytes[0..4]).expect("invalid utf-8 in index signature");
     if signature != "DIRC" {
@@ -89,20 +89,6 @@ fn get_entries() -> Vec<Entry> {
     // TODO: checksum
 
     return entries;
-}
-
-pub fn ls_files(stage: bool) {
-    for entry in get_entries() {
-        if stage {
-            let stage_nb = (entry.flags >> 12) & 3;
-            println!(
-                "{:6o} {} {}\t{}",
-                entry.mode, entry.hash, stage_nb, entry.path
-            );
-        } else {
-            println!("{}", entry.path);
-        }
-    }
 }
 
 pub fn status() -> Result<(), io::Error> {
