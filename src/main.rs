@@ -63,6 +63,11 @@ fn main() {
             }
         }
 
+        "ls_files" => {
+            let stage = cli::has_flag(&args, "--stage", "-s");
+            index::ls_files(stage);
+        }
+
         "help" | _ => {
             print_help();
         }
