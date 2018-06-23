@@ -9,7 +9,7 @@ use std::fs;
 use std::path::Path;
 use std::str;
 
-pub struct Entry {
+struct Entry {
     ctime_sec: u32,
     ctime_nan: u32,
     mtime_sec: u32,
@@ -25,7 +25,7 @@ pub struct Entry {
     path: String,
 }
 
-pub fn get_entries() -> Vec<Entry> {
+fn get_entries() -> Vec<Entry> {
     let bytes = fs::read(Path::new(".git").join("index")).expect("cannot read index");
     let signature = str::from_utf8(&bytes[0..4]).expect("invalid utf-8 in index signature");
     if signature != "DIRC" {
