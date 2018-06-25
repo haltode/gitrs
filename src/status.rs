@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use hash_object;
 use index;
 
-pub fn status() -> Result<(), io::Error> {
+pub fn status() -> io::Result<()> {
     // TODO: show untracked files
     // TODO: 'git rev-parse --show-toplevel'
 
@@ -48,7 +48,7 @@ pub fn status() -> Result<(), io::Error> {
         }
     }
 
-    let index = index::get_entries();
+    let index = index::get_entries().unwrap();
     for file in &files {
         match index.iter().find(|e| file == &e.path) {
             Some(e) => {

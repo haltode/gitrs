@@ -6,7 +6,7 @@ pub fn compress(input: Vec<u8>) -> Vec<u8> {
     if let Err(why) = state.compress() {
         panic!("Error while compressing: {:?}", why);
     }
-    return state.output;
+    state.output
 }
 
 pub fn decompress(input: Vec<u8>) -> Vec<u8> {
@@ -14,5 +14,5 @@ pub fn decompress(input: Vec<u8>) -> Vec<u8> {
     if let Err(why) = state.decompress() {
         panic!("Error while decompressing: {:?}", why);
     }
-    return state.output;
+    state.output
 }

@@ -8,10 +8,8 @@ pub fn get_flag_value(args: &Vec<String>, long_fmt: &str, short_fmt: &str) -> Op
         None => None,
         Some(x) if (x + 1) >= args.len() => {
             println!("warning: missing flag value (ignoring option).");
-            return None;
+            None
         }
-        Some(x) => {
-            return Some(args[x + 1].to_string());
-        }
+        Some(x) => Some(args[x + 1].to_string()),
     }
 }

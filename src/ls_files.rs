@@ -1,7 +1,15 @@
 use index;
 
 pub fn ls_files(stage: bool) {
-    for entry in index::get_entries() {
+    let entries = match index::get_entries() {
+        Ok(e) => e,
+        Err(why) => {
+            println!("ls_files: error while reading git index: {:?}", why);
+            return;
+        }
+    };
+
+    for entry in entries {
         if stage {
             let stage_nb = (entry.flags >> 12) & 3;
             println!(

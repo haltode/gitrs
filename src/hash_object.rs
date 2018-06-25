@@ -5,7 +5,7 @@ use std::path::Path;
 use sha1;
 use zlib;
 
-pub fn hash_object(data: &str, obj_type: &str, write: bool) -> Result<String, io::Error> {
+pub fn hash_object(data: &str, obj_type: &str, write: bool) -> io::Result<String> {
     let header = format!("{} {}", obj_type, data.len());
     let data = format!("{}\x00{}", header, data);
     let hash = sha1::sha1(&data);
@@ -18,9 +18,10 @@ pub fn hash_object(data: &str, obj_type: &str, write: bool) -> Result<String, io
             println!("hash_object: file already exists (ignoring write)");
         } else {
             fs::create_dir_all(&dir)?;
-            fs::write(&file, zlib::compress(data.as_bytes().to_vec()))?;
+            let compressed_data = zlib::compress(data.as_bytes().to_vec());
+            fs::write(&file, &compressed_data)?;
         }
     }
 
-    return Ok(hash);
+    Ok(hash)
 }

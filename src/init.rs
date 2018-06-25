@@ -2,7 +2,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-pub fn init(dir_name: &str) -> Result<(), io::Error> {
+pub fn init(dir_name: &str) -> io::Result<()> {
     let dir_path = Path::new(dir_name);
     let git_path = Path::new(&dir_path).join(".git");
 

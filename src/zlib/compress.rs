@@ -1,15 +1,15 @@
 use bits::{big_endian, little_endian};
 
-#[derive(Debug)]
-pub enum Error {
-    OutOfInput,
-}
-
 pub struct Encoder {
     input: Vec<u8>,
     input_idx: usize,
 
     pub output: Vec<u8>,
+}
+
+#[derive(Debug)]
+pub enum Error {
+    OutOfInput,
 }
 
 impl Encoder {
@@ -28,8 +28,8 @@ impl Encoder {
         let nb_bytes = self.input.len();
         self.non_compressed(nb_bytes)?;
 
-        self.add_checksum();
-        return Ok(());
+        self.add_adler32_checksum();
+        Ok(())
     }
 
     fn write_header(&mut self) {
@@ -57,19 +57,18 @@ impl Encoder {
         self.output.extend(header);
         self.output.extend(data);
 
-        return Ok(());
+        Ok(())
     }
 
     fn fixed_huffman(&mut self) -> Result<(), Error> {
-        return Ok(());
+        unimplemented!()
     }
 
     fn dynamic_huffman(&mut self) -> Result<(), Error> {
-        return Ok(());
+        unimplemented!()
     }
 
-    // Adler-32 checksum
-    fn add_checksum(&mut self) {
+    fn add_adler32_checksum(&mut self) {
         let mut a: u32 = 1;
         let mut b: u32 = 0;
 

@@ -1,6 +1,5 @@
-// Resources used:
-//  * git/Documentation/technical/index-format.txt
-//  https://github.com/git/git/blob/master/Documentation/technical/index-format.txt
+// * git/Documentation/technical/index-format.txt
+//   https://github.com/git/git/blob/master/Documentation/technical/index-format.txt
 
 use std::fs;
 use std::path::Path;
@@ -25,16 +24,23 @@ pub struct Entry {
     pub path: String,
 }
 
-pub fn get_entries() -> Vec<Entry> {
-    let bytes = fs::read(Path::new(".git").join("index")).expect("cannot read index");
+#[derive(Debug)]
+pub enum Error {
+    InvalidHeaderSignature,
+    InvalidIndexVersion,
+}
+
+pub fn get_entries() -> Result<Vec<Entry>, Error> {
+    let index_path = Path::new(".git").join("index");
+    let bytes = fs::read(index_path).expect("cannot read index");
     let signature = str::from_utf8(&bytes[0..4]).expect("invalid utf-8 in index signature");
     if signature != "DIRC" {
-        panic!("invalid header signature in the index");
+        return Err(Error::InvalidHeaderSignature);
     }
 
     let version = big_endian::u8_slice_to_u32(&bytes[4..]);
     if version != 2 {
-        panic!("cannot handle index version other than 2");
+        return Err(Error::InvalidIndexVersion);
     }
 
     let nb_entries = big_endian::u8_slice_to_u32(&bytes[8..]) as usize;
@@ -47,7 +53,7 @@ pub fn get_entries() -> Vec<Entry> {
             idx += 4;
         }
 
-        let hash = sha1::hash_from_u8_slice(&bytes[idx..]);
+        let hash = sha1::u8_slice_hash_to_hex_str(&bytes[idx..]);
         idx += 20;
 
         let flags = big_endian::u8_slice_to_u16(&bytes[idx..]);
@@ -58,7 +64,7 @@ pub fn get_entries() -> Vec<Entry> {
             .position(|&x| x == 0)
             .expect("index entry does not terminate by null byte");
         let path = str::from_utf8(&bytes[idx..idx + null_idx])
-            .expect("invalid utf-8 in entry's path")
+            .expect("invalid utf-8 in index entry path")
             .to_string();
         idx += null_idx;
 
@@ -85,5 +91,5 @@ pub fn get_entries() -> Vec<Entry> {
 
     // TODO: checksum
 
-    return entries;
+    Ok(entries)
 }

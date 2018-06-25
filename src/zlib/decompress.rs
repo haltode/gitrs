@@ -1,16 +1,14 @@
-// Resources used:
 //  * DEFLATE Compressed Data Format Specification version 1.3
-//  https://tools.ietf.org/html/rfc1951
+//    https://tools.ietf.org/html/rfc1951
 //  * puff: a simple inflate written to specify the deflate format unambiguously
-//  https://github.com/madler/zlib/blob/master/contrib/puff/puff.c
+//    https://github.com/madler/zlib/blob/master/contrib/puff/puff.c
 //  * Canonical Huffman code
-//  https://en.wikipedia.org/wiki/Canonical_Huffman_code
+//    https://en.wikipedia.org/wiki/Canonical_Huffman_code
 //  * ZLIB Compressed Data Format Specification version 3.3
-//  https://tools.ietf.org/html/rfc1950
+//    https://tools.ietf.org/html/rfc1950
 //  * An Explanation of the Deflate Algorithm
-//  https://www.zlib.net/feldspar.html
+//    https://www.zlib.net/feldspar.html
 
-// Defined by the deflate format
 const MAX_BITS: usize = 15;
 const MAX_L_CODES: usize = 286;
 const MAX_D_CODES: usize = 30;
@@ -78,7 +76,7 @@ impl HuffmanTable {
             }
         }
 
-        return Ok(table);
+        Ok(table)
     }
 
     fn decode_sym(&self, state: &mut Decoder) -> Result<u16, Error> {
@@ -96,7 +94,8 @@ impl HuffmanTable {
             first <<= 1;
             code <<= 1;
         }
-        return Err(Error::OutOfCodes);
+
+        Err(Error::OutOfCodes)
     }
 }
 
@@ -144,7 +143,8 @@ impl Decoder {
                 break;
             }
         }
-        return Ok(());
+
+        Ok(())
     }
 
     fn get_bits(&mut self, need: u32) -> Result<u16, Error> {
@@ -163,7 +163,7 @@ impl Decoder {
         self.bit_buf = val >> need;
         self.bit_cnt -= need;
         // Zero out unwanted bits
-        return Ok((val & ((1 << need) - 1)) as u16);
+        Ok((val & ((1 << need) - 1)) as u16)
     }
 
     // RFC 1951 - Section 3.2.4
@@ -183,7 +183,8 @@ impl Decoder {
             let byte = self.get_bits(8)? as u8;
             self.output.push(byte);
         }
-        return Ok(());
+
+        Ok(())
     }
 
     // RFC 1951 - Section 3.2.5
@@ -243,7 +244,8 @@ impl Decoder {
                 }
             }
         }
-        return Ok(());
+
+        Ok(())
     }
 
     // RFC 1951 - Section 3.2.6
@@ -263,9 +265,9 @@ impl Decoder {
 
         let len_table = HuffmanTable::new(&length)?;
         let dist_table = HuffmanTable::new(&dist)?;
-
         self.decompress_block(&len_table, &dist_table)?;
-        return Ok(());
+
+        Ok(())
     }
 
     // RFC 1951 - Section 3.2.7
@@ -325,8 +327,8 @@ impl Decoder {
 
         let len_table = HuffmanTable::new(&length[..nlen])?;
         let dist_table = HuffmanTable::new(&length[nlen..])?;
-
         self.decompress_block(&len_table, &dist_table)?;
-        return Ok(());
+
+        Ok(())
     }
 }
