@@ -10,6 +10,32 @@ pub fn status() -> io::Result<()> {
     // TODO: show untracked files
     // TODO: 'git rev-parse --show-toplevel'
 
+    let index = index::get_entries().expect("cannot read index entries");
+    let files = get_all_files_path().expect("cannot get stored files path");
+    for file in &files {
+        match index.iter().find(|e| file == &e.path) {
+            Some(e) => {
+                let file_content =
+                    fs::read_to_string(Path::new(&file)).expect("cannot read file content");
+                let hash = hash_object::hash_object(&file_content, &"blob", false)?;
+                if e.hash != hash {
+                    println!("modified: {}", file);
+                }
+            }
+            None => println!("new: {}", file),
+        };
+    }
+
+    for entry in &index {
+        if files.iter().find(|&x| x == &entry.path).is_none() {
+            println!("deleted: {}", entry.path);
+        }
+    }
+
+    Ok(())
+}
+
+fn get_all_files_path() -> io::Result<Vec<String>> {
     let mut files = Vec::new();
     let ignored_files = match fs::read_to_string(".gitignore") {
         Ok(files) => files,
@@ -48,26 +74,5 @@ pub fn status() -> io::Result<()> {
         }
     }
 
-    let index = index::get_entries().unwrap();
-    for file in &files {
-        match index.iter().find(|e| file == &e.path) {
-            Some(e) => {
-                let file_content =
-                    fs::read_to_string(Path::new(&file)).expect("cannot read file content");
-                let hash = hash_object::hash_object(&file_content, &"blob", false)?;
-                if e.hash != hash {
-                    println!("modified: {}", file);
-                }
-            }
-            None => println!("new: {}", file),
-        };
-    }
-
-    for entry in &index {
-        if files.iter().find(|&x| x == &entry.path).is_none() {
-            println!("deleted: {}", entry.path);
-        }
-    }
-
-    Ok(())
+    Ok(files)
 }
