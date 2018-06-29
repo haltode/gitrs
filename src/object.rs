@@ -58,7 +58,7 @@ fn object_path(hash_prefix: &str) -> Result<PathBuf, Error> {
     let filename = &hash_prefix[2..];
     for file in fs::read_dir(dir).map_err(Error::IoError)? {
         let path = file.map_err(Error::IoError)?.path();
-        if path.starts_with(filename) {
+        if path.file_name().expect("error in file name") == filename {
             return Ok(path);
         }
     }
