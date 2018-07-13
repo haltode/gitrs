@@ -60,10 +60,12 @@ impl Encoder {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn fixed_huffman(&mut self) -> Result<(), Error> {
         unimplemented!()
     }
 
+    #[allow(dead_code)]
     fn dynamic_huffman(&mut self) -> Result<(), Error> {
         unimplemented!()
     }
