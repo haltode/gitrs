@@ -1,3 +1,4 @@
+mod add;
 mod bits;
 mod cat_file;
 mod cli;
@@ -73,6 +74,15 @@ fn main() {
         "status" => {
             if let Err(why) = status::status() {
                 println!("Could not retrieve status: {}", why);
+            }
+        }
+
+        "add" => {
+            if args.len() == 2 {
+                println!("add: command takes paths as arguments.");
+            } else {
+                let paths = &args[2..];
+                add::add(paths);
             }
         }
 
