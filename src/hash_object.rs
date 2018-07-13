@@ -8,7 +8,7 @@ use zlib;
 pub fn hash_object(data: &str, obj_type: &str, write: bool) -> io::Result<String> {
     let header = format!("{} {}", obj_type, data.len());
     let data = format!("{}\x00{}", header, data);
-    let hash = sha1::sha1(&data);
+    let hash = sha1::sha1_str(&data);
 
     if write {
         let dir = Path::new(".git").join("objects").join(&hash[..2]);

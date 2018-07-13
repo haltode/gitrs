@@ -1,10 +1,10 @@
 use bits::big_endian;
 
-fn format_input(input: &str) -> Vec<u8> {
+fn format_input(input: &[u8]) -> Vec<u8> {
     let mut fmt_input = Vec::new();
     let input_size = input.len();
 
-    fmt_input.extend(input.as_bytes());
+    fmt_input.extend(input);
     fmt_input.push(0x80);
 
     let padding = vec![0; 63 - ((input_size + 8) % 64)];
@@ -16,7 +16,11 @@ fn format_input(input: &str) -> Vec<u8> {
     fmt_input
 }
 
-pub fn sha1(data: &str) -> String {
+pub fn sha1_str(data: &str) -> String {
+    sha1_bytes(data.as_bytes())
+}
+
+pub fn sha1_bytes(data: &[u8]) -> String {
     let mut states = [
         0x67452301u32,
         0xefcdab89u32,
@@ -93,23 +97,23 @@ pub fn u8_slice_hash_to_hex_str(hash: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use sha1::sha1;
+    use sha1::sha1_str;
 
     #[test]
     fn test_sha1() {
-        assert_eq!(sha1("abc"), "a9993e364706816aba3e25717850c26c9cd0d89d");
-        assert_eq!(sha1(""), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
+        assert_eq!(sha1_str("abc"), "a9993e364706816aba3e25717850c26c9cd0d89d");
+        assert_eq!(sha1_str(""), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
         assert_eq!(
-            sha1("The quick brown fox jumps over the lazy dog"),
+            sha1_str("The quick brown fox jumps over the lazy dog"),
             "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
         );
         assert_eq!(
-            sha1("The quick brown fox jumps over the lazy cog"),
+            sha1_str("The quick brown fox jumps over the lazy cog"),
             "de9f2c7fd25e1b3afad3e85a0bd17d9b100db4b3"
         );
 
         assert_eq!(
-            sha1(
+            sha1_str(
                 "A4j1pcn9Z8l0jzETQk9hVJjWE5dki7hd4Tk69B2aG60OGdifYMm1BNJ2PnDXz0\
                  D5XwT7QzFZ9JLtKaxl0cMndNPbzStb3YRb4lnR94BAlapbQsRqoZBYyctywtx0\
                  rkOYPbXboNusdd7PupOR3u1Mu71qNuMTgGO3xbO3YAhG4V8eyGGEBQxlObi0m6\
@@ -132,7 +136,7 @@ mod tests {
         );
 
         assert_eq!(
-            sha1(
+            sha1_str(
                 "This is a multi-line string litteral
 used as a test file sample!\n"
             ),
