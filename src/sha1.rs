@@ -95,6 +95,24 @@ pub fn u8_slice_hash_to_hex_str(hash: &[u8]) -> String {
     u32_hash_to_hex_str(&states)
 }
 
+pub fn hex_str_to_u8(hash: &str) -> Vec<u8> {
+    let mut dec_val = Vec::new();
+    for c in hash.chars() {
+        let n = char::to_digit(c, 16).expect("non hex value in hash");
+        dec_val.push(n as u8);
+    }
+
+    let mut compressed_hash = Vec::new();
+    let mut idx = 0;
+    for _ in 0..(hash.len() / 2) {
+        let n = (dec_val[idx] << 4) | dec_val[idx + 1];
+        compressed_hash.push(n);
+        idx += 2;
+    }
+
+    compressed_hash
+}
+
 #[cfg(test)]
 mod tests {
     use sha1::sha1_str;

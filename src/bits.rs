@@ -21,6 +21,10 @@ pub mod big_endian {
         ]
     }
 
+    pub fn u16_to_u8(x: u16) -> [u8; 2] {
+        [((x >> 8) & 0xff) as u8, (x & 0xff) as u8]
+    }
+
     pub fn u8_to_u32(x: [u8; 4]) -> u32 {
         (x[0] as u32) << 24 | (x[1] as u32) << 16 | (x[2] as u32) << 8 | (x[3] as u32)
     }

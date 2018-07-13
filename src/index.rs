@@ -10,16 +10,16 @@ use sha1;
 
 #[derive(Debug)]
 pub struct Entry {
-    ctime_sec: u32,
-    ctime_nan: u32,
-    mtime_sec: u32,
-    mtime_nan: u32,
-    dev: u32,
-    ino: u32,
+    pub ctime_sec: u32,
+    pub ctime_nan: u32,
+    pub mtime_sec: u32,
+    pub mtime_nan: u32,
+    pub dev: u32,
+    pub ino: u32,
     pub mode: u32,
-    uid: u32,
-    gid: u32,
-    size: u32,
+    pub uid: u32,
+    pub gid: u32,
+    pub size: u32,
     pub hash: String,
     pub flags: u16,
     pub path: String,
@@ -33,6 +33,9 @@ pub enum Error {
 
 pub fn get_entries() -> Result<Vec<Entry>, Error> {
     let index_path = Path::new(".git").join("index");
+    if !index_path.exists() {
+        return Ok(vec![]);
+    }
     let bytes = fs::read(index_path).expect("cannot read index");
     let signature = str::from_utf8(&bytes[0..4]).expect("invalid utf-8 in index signature");
     if signature != "DIRC" {
@@ -70,8 +73,8 @@ pub fn get_entries() -> Result<Vec<Entry>, Error> {
         idx += null_idx;
 
         let entry_len = 62 + path.len();
-        let padding = ((entry_len + 8) / 8) * 8 - entry_len;
-        idx += padding;
+        let padding_len = ((entry_len + 8) / 8) * 8 - entry_len;
+        idx += padding_len;
 
         entries.push(Entry {
             ctime_sec: fields[0],
@@ -93,4 +96,53 @@ pub fn get_entries() -> Result<Vec<Entry>, Error> {
     // TODO: checksum
 
     Ok(entries)
+}
+
+pub fn write_entries(entries: Vec<Entry>) {
+    let mut compressed_entries = Vec::new();
+    for entry in &entries {
+        let fields = vec![
+            entry.ctime_sec,
+            entry.ctime_nan,
+            entry.mtime_sec,
+            entry.mtime_nan,
+            entry.dev,
+            entry.ino,
+            entry.mode,
+            entry.uid,
+            entry.gid,
+            entry.size,
+        ];
+
+        let mut bytes_entry = Vec::new();
+        for field in fields {
+            bytes_entry.extend(&big_endian::u32_to_u8(field));
+        }
+
+        let compressed_hash = sha1::hex_str_to_u8(&entry.hash);
+        bytes_entry.extend(&compressed_hash);
+        bytes_entry.extend(&big_endian::u16_to_u8(entry.flags));
+        bytes_entry.extend(entry.path.as_bytes());
+
+        let entry_len = 62 + entry.path.len();
+        let padding_len = ((entry_len + 8) / 8) * 8 - entry_len;
+        let padding = vec![0u8; padding_len];
+        bytes_entry.extend(&padding);
+
+        compressed_entries.extend(&bytes_entry);
+    }
+
+    let mut header = vec![68, 73, 82, 67, 0, 0, 0, 2];
+    header.extend(&big_endian::u32_to_u8(entries.len() as u32));
+
+    let mut data = Vec::new();
+    data.extend(&header);
+    data.extend(&compressed_entries);
+
+    let checksum = sha1::sha1_bytes(&data);
+    let compressed_hash = sha1::hex_str_to_u8(&checksum);
+    data.extend(&compressed_hash);
+
+    let index = Path::new(".git").join("index");
+    fs::write(index, &data).expect("cannot write to index");
 }
