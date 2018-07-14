@@ -1,4 +1,4 @@
-use bits::{big_endian, little_endian};
+use utils::bits::{big_endian, little_endian};
 
 pub struct Encoder {
     input: Vec<u8>,

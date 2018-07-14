@@ -1,4 +1,4 @@
-use bits::big_endian;
+use utils::bits::big_endian;
 
 fn format_input(input: &[u8]) -> Vec<u8> {
     let mut fmt_input = Vec::new();

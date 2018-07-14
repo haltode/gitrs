@@ -1,17 +1,17 @@
 mod add;
-mod bits;
 mod cat_file;
-mod cli;
 mod hash_object;
 mod index;
 mod init;
 mod ls_files;
 mod object;
-mod sha1;
 mod status;
+mod utils;
 mod zlib;
 
 use std::env;
+
+use utils::cli;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
