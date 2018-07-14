@@ -29,6 +29,7 @@ pub struct Entry {
 #[derive(Debug)]
 pub enum Error {
     EntryMissingNullByteEnding,
+    InvalidChecksum,
     InvalidHash,
     InvalidHeaderSignature,
     InvalidIndexVersion,
@@ -100,7 +101,11 @@ pub fn read_entries() -> Result<Vec<Entry>, Error> {
         });
     }
 
-    // TODO: checksum
+    let checksum = sha1::u8_slice_hash_to_hex_str(&bytes[idx..]);
+    let actual_hash = sha1::sha1_bytes(&bytes[..idx]);
+    if actual_hash != checksum {
+        return Err(Error::InvalidChecksum);
+    }
 
     Ok(entries)
 }
