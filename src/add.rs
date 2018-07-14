@@ -1,12 +1,20 @@
 use std::fs;
+use std::io;
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
 use hash_object;
 use index;
 
-pub fn add(paths: &[String]) {
-    let mut entries = index::get_entries().expect("cannot retrieve index entries");
+#[derive(Debug)]
+pub enum Error {
+    HashError(io::Error),
+    IndexError(index::Error),
+    IoError(io::Error),
+}
+
+pub fn add(paths: &[String]) -> Result<(), Error> {
+    let mut entries = index::read_entries().map_err(Error::IndexError)?;
     for path in paths {
         let already_indexed = entries.iter().any(|e| &e.path == path);
         if already_indexed {
@@ -14,11 +22,11 @@ pub fn add(paths: &[String]) {
         }
 
         let fpath = Path::new(&path);
-        let data = fs::read_to_string(&fpath).expect("cannot read file");
-        let meta = fs::metadata(&fpath).expect("cannot get file metadata");
+        let data = fs::read_to_string(&fpath).map_err(Error::IoError)?;
+        let meta = fs::metadata(&fpath).map_err(Error::IoError)?;
 
         let write = true;
-        let hash = hash_object::hash_object(&data, "blob", write).expect("cannot hash object");
+        let hash = hash_object::hash_object(&data, "blob", write).map_err(Error::HashError)?;
         let flags = path.len() as u16;
 
         entries.push(index::Entry {
@@ -39,5 +47,7 @@ pub fn add(paths: &[String]) {
     }
 
     entries.sort_by(|a, b| a.path.cmp(&b.path));
-    index::write_entries(entries);
+    index::write_entries(entries).map_err(Error::IndexError)?;
+
+    Ok(())
 }

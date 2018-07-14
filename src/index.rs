@@ -2,6 +2,7 @@
 //   https://github.com/git/git/blob/master/Documentation/technical/index-format.txt
 
 use std::fs;
+use std::io;
 use std::path::Path;
 use std::str;
 
@@ -27,21 +28,25 @@ pub struct Entry {
 
 #[derive(Debug)]
 pub enum Error {
+    EntryMissingNullByteEnding,
+    InvalidHash,
     InvalidHeaderSignature,
     InvalidIndexVersion,
+    IoError(io::Error),
+    Utf8Error(str::Utf8Error),
 }
 
-pub fn get_entries() -> Result<Vec<Entry>, Error> {
-    let index_path = Path::new(".git").join("index");
-    if !index_path.exists() {
+pub fn read_entries() -> Result<Vec<Entry>, Error> {
+    let index = Path::new(".git").join("index");
+    if !index.exists() {
         return Ok(vec![]);
     }
-    let bytes = fs::read(index_path).expect("cannot read index");
-    let signature = str::from_utf8(&bytes[0..4]).expect("invalid utf-8 in index signature");
+
+    let bytes = fs::read(index).map_err(Error::IoError)?;
+    let signature = str::from_utf8(&bytes[0..4]).map_err(Error::Utf8Error)?;
     if signature != "DIRC" {
         return Err(Error::InvalidHeaderSignature);
     }
-
     let version = big_endian::u8_slice_to_u32(&bytes[4..]);
     if version != 2 {
         return Err(Error::InvalidIndexVersion);
@@ -63,12 +68,14 @@ pub fn get_entries() -> Result<Vec<Entry>, Error> {
         let flags = big_endian::u8_slice_to_u16(&bytes[idx..]);
         idx += 2;
 
-        let null_idx = bytes[idx..]
-            .iter()
-            .position(|&x| x == 0)
-            .expect("index entry does not terminate by null byte");
+        let null_idx = match bytes[idx..].iter().position(|&x| x == 0) {
+            Some(i) => i,
+            None => {
+                return Err(Error::EntryMissingNullByteEnding);
+            }
+        };
         let path = str::from_utf8(&bytes[idx..idx + null_idx])
-            .expect("invalid utf-8 in index entry path")
+            .map_err(Error::Utf8Error)?
             .to_string();
         idx += null_idx;
 
@@ -98,7 +105,7 @@ pub fn get_entries() -> Result<Vec<Entry>, Error> {
     Ok(entries)
 }
 
-pub fn write_entries(entries: Vec<Entry>) {
+pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
     let mut compressed_entries = Vec::new();
     for entry in &entries {
         let fields = vec![
@@ -119,7 +126,12 @@ pub fn write_entries(entries: Vec<Entry>) {
             bytes_entry.extend(&big_endian::u32_to_u8(field));
         }
 
-        let compressed_hash = sha1::hex_str_to_u8(&entry.hash);
+        let compressed_hash = match sha1::hex_str_to_u8(&entry.hash) {
+            Some(hash) => hash,
+            None => {
+                return Err(Error::InvalidHash);
+            }
+        };
         bytes_entry.extend(&compressed_hash);
         bytes_entry.extend(&big_endian::u16_to_u8(entry.flags));
         bytes_entry.extend(entry.path.as_bytes());
@@ -140,9 +152,16 @@ pub fn write_entries(entries: Vec<Entry>) {
     data.extend(&compressed_entries);
 
     let checksum = sha1::sha1_bytes(&data);
-    let compressed_hash = sha1::hex_str_to_u8(&checksum);
+    let compressed_hash = match sha1::hex_str_to_u8(&checksum) {
+        Some(hash) => hash,
+        None => {
+            return Err(Error::InvalidHash);
+        }
+    };
     data.extend(&compressed_hash);
 
     let index = Path::new(".git").join("index");
-    fs::write(index, &data).expect("cannot write to index");
+    fs::write(index, &data).map_err(Error::IoError)?;
+
+    Ok(())
 }

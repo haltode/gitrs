@@ -73,7 +73,7 @@ fn main() {
 
         "status" => {
             if let Err(why) = status::status() {
-                println!("Could not retrieve status: {}", why);
+                println!("Could not retrieve status: {:?}", why);
             }
         }
 
@@ -82,7 +82,9 @@ fn main() {
                 println!("add: command takes paths as arguments.");
             } else {
                 let paths = &args[2..];
-                add::add(paths);
+                if let Err(why) = add::add(paths) {
+                    println!("Could not add paths: {:?}", why);
+                }
             }
         }
 

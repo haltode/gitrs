@@ -1,7 +1,7 @@
 use index;
 
 pub fn ls_files(stage: bool) {
-    let entries = match index::get_entries() {
+    let entries = match index::read_entries() {
         Ok(e) => e,
         Err(why) => {
             println!("ls_files: error while reading git index: {:?}", why);

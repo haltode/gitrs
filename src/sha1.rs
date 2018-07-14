@@ -95,10 +95,10 @@ pub fn u8_slice_hash_to_hex_str(hash: &[u8]) -> String {
     u32_hash_to_hex_str(&states)
 }
 
-pub fn hex_str_to_u8(hash: &str) -> Vec<u8> {
+pub fn hex_str_to_u8(hash: &str) -> Option<Vec<u8>> {
     let mut dec_val = Vec::new();
     for c in hash.chars() {
-        let n = char::to_digit(c, 16).expect("non hex value in hash");
+        let n = char::to_digit(c, 16)?;
         dec_val.push(n as u8);
     }
 
@@ -110,7 +110,7 @@ pub fn hex_str_to_u8(hash: &str) -> Vec<u8> {
         idx += 2;
     }
 
-    compressed_hash
+    Some(compressed_hash)
 }
 
 #[cfg(test)]

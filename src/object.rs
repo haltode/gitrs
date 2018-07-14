@@ -3,6 +3,7 @@
 
 use std::fs;
 use std::io;
+use std::num;
 use std::path::{Path, PathBuf};
 use std::str;
 
@@ -16,9 +17,14 @@ pub struct Object {
 
 #[derive(Debug)]
 pub enum Error {
-    IoError(io::Error),
     HashPrefixTooShort,
+    HeaderMissingNullByte,
+    HeaderMissingSize,
+    HeaderMissingType,
+    IoError(io::Error),
     ObjectNotFound,
+    ParsingError(num::ParseIntError),
+    Utf8Error(str::Utf8Error),
 }
 
 pub fn parse(hash_prefix: &str) -> Result<Object, Error> {
@@ -26,20 +32,29 @@ pub fn parse(hash_prefix: &str) -> Result<Object, Error> {
     let raw_data = fs::read(path).map_err(Error::IoError)?;
     let decompressed_data = zlib::decompress(raw_data);
 
-    let data = str::from_utf8(&decompressed_data).expect("invalid utf-8 in object data");
+    let data = str::from_utf8(&decompressed_data).map_err(Error::Utf8Error)?;
 
-    let header_idx = data.find('\x00')
-        .expect("missing null byte in object header");
+    let header_idx = match data.find('\x00') {
+        Some(i) => i,
+        None => {
+            return Err(Error::HeaderMissingNullByte);
+        }
+    };
     let (header, data) = data.split_at(header_idx);
 
     let mut iter = header.split_whitespace();
-    let obj_type = iter.next()
-        .expect("missing type in object header")
-        .to_string();
-    let obj_size = iter.next()
-        .expect("missing size in object header")
-        .parse::<usize>()
-        .expect("cannot convert size in object header");
+    let obj_type = match iter.next() {
+        Some(tp) => tp.to_string(),
+        None => {
+            return Err(Error::HeaderMissingType);
+        }
+    };
+    let obj_size = match iter.next() {
+        Some(sz) => sz.parse::<usize>().map_err(Error::ParsingError)?,
+        None => {
+            return Err(Error::HeaderMissingSize);
+        }
+    };
     let data = data[1..].to_string();
 
     Ok(Object {
@@ -58,8 +73,10 @@ fn object_path(hash_prefix: &str) -> Result<PathBuf, Error> {
     let filename = &hash_prefix[2..];
     for file in fs::read_dir(dir).map_err(Error::IoError)? {
         let path = file.map_err(Error::IoError)?.path();
-        if path.file_name().expect("error in file name") == filename {
-            return Ok(path);
+        if let Some(f) = path.file_name() {
+            if f == filename {
+                return Ok(path.clone());
+            }
         }
     }
 
