@@ -3,16 +3,16 @@
 
 use std::fs;
 use std::io;
-use std::num;
 use std::path::{Path, PathBuf};
 use std::str;
 
+use utils::bits::big_endian;
 use zlib;
 
 pub struct Object {
     pub obj_type: String,
     pub obj_size: usize,
-    pub data: String,
+    pub data: Vec<u8>,
 }
 
 #[derive(Debug)]
@@ -23,18 +23,15 @@ pub enum Error {
     HeaderMissingType,
     IoError(io::Error),
     ObjectNotFound,
-    ParsingError(num::ParseIntError),
     Utf8Error(str::Utf8Error),
 }
 
 pub fn parse(hash_prefix: &str) -> Result<Object, Error> {
     let path = object_path(hash_prefix)?;
     let raw_data = fs::read(path).map_err(Error::IoError)?;
-    let decompressed_data = zlib::decompress(raw_data);
+    let data = zlib::decompress(raw_data);
 
-    let data = str::from_utf8(&decompressed_data).map_err(Error::Utf8Error)?;
-
-    let header_idx = match data.find('\x00') {
+    let header_idx = match data.iter().position(|&x| x == 0) {
         Some(i) => i,
         None => {
             return Err(Error::HeaderMissingNullByte);
@@ -42,20 +39,22 @@ pub fn parse(hash_prefix: &str) -> Result<Object, Error> {
     };
     let (header, data) = data.split_at(header_idx);
 
-    let mut iter = header.split_whitespace();
+    // 32 = space character (ASCII)
+    let mut iter = header.split(|&x| x == 32);
     let obj_type = match iter.next() {
-        Some(tp) => tp.to_string(),
+        Some(tp) => str::from_utf8(&tp).map_err(Error::Utf8Error)?.to_string(),
         None => {
             return Err(Error::HeaderMissingType);
         }
     };
     let obj_size = match iter.next() {
-        Some(sz) => sz.parse::<usize>().map_err(Error::ParsingError)?,
+        Some(sz) => big_endian::u8_slice_to_usize(sz),
         None => {
             return Err(Error::HeaderMissingSize);
         }
     };
-    let data = data[1..].to_string();
+    // Skip the null byte
+    let data = data[1..].to_vec();
 
     Ok(Object {
         obj_type,

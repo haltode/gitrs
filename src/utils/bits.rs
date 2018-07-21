@@ -40,6 +40,15 @@ pub mod big_endian {
     pub fn u8_slice_to_u16(x: &[u8]) -> u16 {
         u8_to_u16([x[0], x[1]])
     }
+
+    pub fn u8_slice_to_usize(x: &[u8]) -> usize {
+        let mut res = 0 as usize;
+        for &e in x {
+            res <<= 8;
+            res += e as usize;
+        }
+        return res;
+    }
 }
 
 pub mod little_endian {

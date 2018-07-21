@@ -8,6 +8,7 @@
 use std::cmp;
 use std::fs;
 use std::io;
+use std::str;
 
 use index;
 use object;
@@ -17,6 +18,7 @@ pub enum Error {
     IndexError(index::Error),
     IoError(io::Error),
     ObjectError(object::Error),
+    Utf8Error(str::Utf8Error),
 }
 
 enum State {
@@ -75,16 +77,17 @@ pub fn diff() -> Result<(), Error> {
             continue;
         }
 
-        let cur_content = fs::read_to_string(path).map_err(Error::IoError)?;
+        let stored_data = str::from_utf8(&obj.data).map_err(Error::Utf8Error)?;
+        let actual_data = fs::read_to_string(path).map_err(Error::IoError)?;
 
-        let stored_data: Vec<&str> = obj.data.split("\n").collect();
-        let actual_data: Vec<&str> = cur_content.split("\n").collect();
-        if stored_data == actual_data {
+        let stored_lines: Vec<&str> = stored_data.split("\n").collect();
+        let actual_lines: Vec<&str> = actual_data.split("\n").collect();
+        if stored_lines == actual_lines {
             continue;
         }
 
         println!("{}:", path);
-        for (state, line) in lcs_diff(&stored_data, &actual_data) {
+        for (state, line) in lcs_diff(&stored_lines, &actual_lines) {
             let c = match state {
                 State::Ins => '+',
                 State::Del => '-',

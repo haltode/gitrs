@@ -12,7 +12,8 @@ pub fn cat_file(hash_prefix: &str, mode: &str) {
     match mode {
         "type" => println!("{}", object.obj_type),
         "size" => println!("{}", object.obj_size),
-        "print" => println!("{}", object.data),
+        // TODO: specific formatting for different type
+        "print" => println!("{:?}", object.data),
         fmt => println!("cat_file: unknown option mode: {}", fmt),
     }
 }
