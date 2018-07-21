@@ -1,5 +1,6 @@
 mod add;
 mod cat_file;
+mod diff;
 mod hash_object;
 mod index;
 mod init;
@@ -74,6 +75,12 @@ fn main() {
         "status" => {
             if let Err(why) = status::status() {
                 println!("Could not retrieve status: {:?}", why);
+            }
+        }
+
+        "diff" => {
+            if let Err(why) = diff::diff() {
+                println!("Could not show diff: {:?}", why);
             }
         }
 
