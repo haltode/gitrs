@@ -115,10 +115,10 @@ pub fn hex_str_to_u8(hash: &str) -> Option<Vec<u8>> {
 
 #[cfg(test)]
 mod tests {
-    use sha1::sha1_str;
+    use utils::sha1::sha1_str;
 
     #[test]
-    fn test_sha1() {
+    fn short() {
         assert_eq!(sha1_str("abc"), "a9993e364706816aba3e25717850c26c9cd0d89d");
         assert_eq!(sha1_str(""), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
         assert_eq!(
@@ -129,7 +129,10 @@ mod tests {
             sha1_str("The quick brown fox jumps over the lazy cog"),
             "de9f2c7fd25e1b3afad3e85a0bd17d9b100db4b3"
         );
+    }
 
+    #[test]
+    fn long() {
         assert_eq!(
             sha1_str(
                 "A4j1pcn9Z8l0jzETQk9hVJjWE5dki7hd4Tk69B2aG60OGdifYMm1BNJ2PnDXz0\
@@ -152,7 +155,10 @@ mod tests {
             ),
             "32f3f879a843b8792f1574110d02d66aa04701ad"
         );
+    }
 
+    #[test]
+    fn multiline() {
         assert_eq!(
             sha1_str(
                 "This is a multi-line string litteral
