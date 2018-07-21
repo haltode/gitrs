@@ -8,6 +8,7 @@ mod ls_files;
 mod object;
 mod status;
 mod utils;
+mod write_tree;
 mod zlib;
 
 use std::env;
@@ -94,6 +95,11 @@ fn main() {
                 }
             }
         }
+
+        "write_tree" => match write_tree::write_tree() {
+            Ok(hash) => println!("{}", hash),
+            Err(why) => println!("Could not create tree object: {:?}", why),
+        },
 
         "help" | _ => {
             print_help();
