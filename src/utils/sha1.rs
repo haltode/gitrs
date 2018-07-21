@@ -16,11 +16,7 @@ fn format_input(input: &[u8]) -> Vec<u8> {
     fmt_input
 }
 
-pub fn sha1_str(data: &str) -> String {
-    sha1_bytes(data.as_bytes())
-}
-
-pub fn sha1_bytes(data: &[u8]) -> String {
+pub fn sha1(data: &[u8]) -> String {
     let mut states = [
         0x67452301u32,
         0xefcdab89u32,
@@ -115,18 +111,24 @@ pub fn hex_str_to_u8(hash: &str) -> Option<Vec<u8>> {
 
 #[cfg(test)]
 mod tests {
-    use utils::sha1::sha1_str;
+    use utils::sha1::sha1;
 
     #[test]
     fn short() {
-        assert_eq!(sha1_str("abc"), "a9993e364706816aba3e25717850c26c9cd0d89d");
-        assert_eq!(sha1_str(""), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
         assert_eq!(
-            sha1_str("The quick brown fox jumps over the lazy dog"),
+            sha1("abc".as_bytes()),
+            "a9993e364706816aba3e25717850c26c9cd0d89d"
+        );
+        assert_eq!(
+            sha1("".as_bytes()),
+            "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+        );
+        assert_eq!(
+            sha1("The quick brown fox jumps over the lazy dog".as_bytes()),
             "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
         );
         assert_eq!(
-            sha1_str("The quick brown fox jumps over the lazy cog"),
+            sha1("The quick brown fox jumps over the lazy cog".as_bytes()),
             "de9f2c7fd25e1b3afad3e85a0bd17d9b100db4b3"
         );
     }
@@ -134,7 +136,7 @@ mod tests {
     #[test]
     fn long() {
         assert_eq!(
-            sha1_str(
+            sha1(
                 "A4j1pcn9Z8l0jzETQk9hVJjWE5dki7hd4Tk69B2aG60OGdifYMm1BNJ2PnDXz0\
                  D5XwT7QzFZ9JLtKaxl0cMndNPbzStb3YRb4lnR94BAlapbQsRqoZBYyctywtx0\
                  rkOYPbXboNusdd7PupOR3u1Mu71qNuMTgGO3xbO3YAhG4V8eyGGEBQxlObi0m6\
@@ -152,6 +154,7 @@ mod tests {
                  OwThnKbKOHfMUuNoOuFYIcadRVjD0tJwTGOiwb4aDH70aFd6eN4Fnu0wHG62UN\
                  EtEihhkQZfhohShVWcUO23LuLZj4aBIgY5hGJPZO7IImEYtb49rrZ1687EcvTA\
                  LyhMMxMD"
+                    .as_bytes()
             ),
             "32f3f879a843b8792f1574110d02d66aa04701ad"
         );
@@ -160,9 +163,10 @@ mod tests {
     #[test]
     fn multiline() {
         assert_eq!(
-            sha1_str(
+            sha1(
                 "This is a multi-line string litteral
 used as a test file sample!\n"
+                    .as_bytes()
             ),
             "6bf58217d47b728b777fa2ea1545787587186fff"
         );

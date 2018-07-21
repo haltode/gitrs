@@ -12,7 +12,7 @@ pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> io::Result<Strin
     full_data.push(0);
     full_data.extend(data);
 
-    let hash = sha1::sha1_bytes(&full_data);
+    let hash = sha1::sha1(&full_data);
 
     if write {
         let dir = Path::new(".git").join("objects").join(&hash[..2]);

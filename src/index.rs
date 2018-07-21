@@ -102,7 +102,7 @@ pub fn read_entries() -> Result<Vec<Entry>, Error> {
     }
 
     let checksum = sha1::u8_slice_hash_to_hex_str(&bytes[idx..]);
-    let actual_hash = sha1::sha1_bytes(&bytes[..idx]);
+    let actual_hash = sha1::sha1(&bytes[..idx]);
     if actual_hash != checksum {
         return Err(Error::InvalidChecksum);
     }
@@ -156,7 +156,7 @@ pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
     data.extend(&header);
     data.extend(&compressed_entries);
 
-    let checksum = sha1::sha1_bytes(&data);
+    let checksum = sha1::sha1(&data);
     let compressed_hash = match sha1::hex_str_to_u8(&checksum) {
         Some(hash) => hash,
         None => {
