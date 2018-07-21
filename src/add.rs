@@ -22,7 +22,7 @@ pub fn add(paths: &[String]) -> Result<(), Error> {
         }
 
         let fpath = Path::new(&path);
-        let data = fs::read_to_string(&fpath).map_err(Error::IoError)?;
+        let data = fs::read(&fpath).map_err(Error::IoError)?;
         let meta = fs::metadata(&fpath).map_err(Error::IoError)?;
 
         let write = true;

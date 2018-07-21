@@ -5,10 +5,14 @@ use std::path::Path;
 use utils::sha1;
 use zlib;
 
-pub fn hash_object(data: &str, obj_type: &str, write: bool) -> io::Result<String> {
+pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> io::Result<String> {
     let header = format!("{} {}", obj_type, data.len());
-    let data = format!("{}\x00{}", header, data);
-    let hash = sha1::sha1_str(&data);
+    let mut full_data = Vec::new();
+    full_data.extend(header.as_bytes());
+    full_data.push(0);
+    full_data.extend(data);
+
+    let hash = sha1::sha1_bytes(&full_data);
 
     if write {
         let dir = Path::new(".git").join("objects").join(&hash[..2]);
@@ -18,7 +22,7 @@ pub fn hash_object(data: &str, obj_type: &str, write: bool) -> io::Result<String
             println!("hash_object: file already exists (ignoring write)");
         } else {
             fs::create_dir_all(&dir)?;
-            let compressed_data = zlib::compress(data.as_bytes().to_vec());
+            let compressed_data = zlib::compress(full_data);
             fs::write(&file, &compressed_data)?;
         }
     }
@@ -32,7 +36,7 @@ mod tests {
 
     #[test]
     fn short() {
-        let res = hash_object("this is a test!", "blob", false).unwrap();
+        let res = hash_object("this is a test!".as_bytes(), "blob", false).unwrap();
         assert_eq!("ca8d93e91ccd585c740d9a483ab11c428eb085f2", &res);
     }
 
@@ -51,7 +55,8 @@ mod tests {
              N3ih6wJWruBxixGAMLIseURVEUBnRc3nkYCMVsgkwRVevo8Ehp60Ih7eF4sarMX\
              6EH8caKYIv5A3SE6Owb6dQqYrbOL7EgXNOnCIwQxhz0aw2p4AYmHC22so8rfGbN\
              C1I95RXd9g38Xg4fm8AJORNGsEx0mVLy6GFLuiZ6KxNXci6wPg2BnZj5Pwg4ywT\
-             yuPeiOI1ooBwlNDLqqFxUVzfHeVpVila3PyrMrMSMq0CV",
+             yuPeiOI1ooBwlNDLqqFxUVzfHeVpVila3PyrMrMSMq0CV"
+                .as_bytes(),
             "blob",
             false,
         ).unwrap();
@@ -62,7 +67,8 @@ mod tests {
     fn multiline() {
         let res = hash_object(
             "This is a multi-line string litteral
-used as a test file sample!\n",
+used as a test file sample!\n"
+                .as_bytes(),
             "blob",
             false,
         ).unwrap();

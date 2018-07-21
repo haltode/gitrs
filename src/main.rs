@@ -35,7 +35,7 @@ fn main() {
             if args.len() == 2 {
                 println!("hash_object: command takes a 'data' argument.");
             } else {
-                let data = &args[2];
+                let data = &args[2].as_bytes();
 
                 let default_obj_type = String::from("blob");
                 let obj_type =

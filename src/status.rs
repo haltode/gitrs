@@ -22,8 +22,8 @@ pub fn status() -> Result<(), Error> {
     for file in &files {
         match index.iter().find(|e| file == &e.path) {
             Some(e) => {
-                let file_content = fs::read_to_string(Path::new(&file)).map_err(Error::IoError)?;
-                let hash = hash_object::hash_object(&file_content, &"blob", false)
+                let file_content = fs::read(Path::new(&file)).map_err(Error::IoError)?;
+                let hash = hash_object::hash_object(&file_content, "blob", false)
                     .map_err(Error::HashError)?;
                 if e.hash != hash {
                     println!("modified: {}", file);
