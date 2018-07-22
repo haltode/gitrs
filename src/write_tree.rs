@@ -16,7 +16,7 @@ pub fn write_tree() -> Result<String, Error> {
     let entries = index::read_entries().map_err(Error::IndexError)?;
     for entry in entries {
         let tree_entry = format!("{:o} {}\x00", entry.mode, entry.path);
-        let compressed_hash = match sha1::hex_str_to_u8(&entry.hash) {
+        let compressed_hash = match sha1::compress_hash(&entry.hash) {
             Some(hash) => hash,
             None => continue,
         };

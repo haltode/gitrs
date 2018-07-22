@@ -6,6 +6,7 @@ mod index;
 mod init;
 mod ls_files;
 mod object;
+mod read_tree;
 mod status;
 mod utils;
 mod write_tree;
@@ -100,6 +101,15 @@ fn main() {
             Ok(hash) => println!("{}", hash),
             Err(why) => println!("Could not create tree object: {:?}", why),
         },
+
+        "read_tree" => {
+            if args.len() == 2 {
+                println!("read_tree: command takes a 'hash' argument.");
+            } else {
+                let hash = &args[2];
+                cat_file::cat_file(hash, "print");
+            }
+        }
 
         "help" | _ => {
             print_help();

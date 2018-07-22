@@ -1,3 +1,5 @@
+use std::char;
+
 use utils::bits::big_endian;
 
 fn format_input(input: &[u8]) -> Vec<u8> {
@@ -91,7 +93,7 @@ pub fn u8_slice_hash_to_hex_str(hash: &[u8]) -> String {
     u32_hash_to_hex_str(&states)
 }
 
-pub fn hex_str_to_u8(hash: &str) -> Option<Vec<u8>> {
+pub fn compress_hash(hash: &str) -> Option<Vec<u8>> {
     let mut dec_val = Vec::new();
     for c in hash.chars() {
         let n = char::to_digit(c, 16)?;
@@ -107,6 +109,21 @@ pub fn hex_str_to_u8(hash: &str) -> Option<Vec<u8>> {
     }
 
     Some(compressed_hash)
+}
+
+pub fn decompress_hash(hash: &[u8]) -> Option<String> {
+    let mut decompressed_hash = String::new();
+    for &x in hash {
+        let fst = (x >> 4) & 0x0f;
+        let snd = x & 0x0f;
+
+        let n1 = char::from_digit(fst as u32, 16)?;
+        let n2 = char::from_digit(snd as u32, 16)?;
+        decompressed_hash.push(n1);
+        decompressed_hash.push(n2);
+    }
+
+    Some(decompressed_hash)
 }
 
 #[cfg(test)]

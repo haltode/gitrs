@@ -72,7 +72,7 @@ pub fn diff() -> Result<(), Error> {
     for entry in &entries {
         let path = &entry.path;
         let hash = &entry.hash;
-        let obj = object::parse(hash).map_err(Error::ObjectError)?;
+        let obj = object::get_object(hash).map_err(Error::ObjectError)?;
         if obj.obj_type != "blob" {
             continue;
         }

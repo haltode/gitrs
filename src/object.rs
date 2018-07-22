@@ -26,7 +26,7 @@ pub enum Error {
     Utf8Error(str::Utf8Error),
 }
 
-pub fn parse(hash_prefix: &str) -> Result<Object, Error> {
+pub fn get_object(hash_prefix: &str) -> Result<Object, Error> {
     let path = object_path(hash_prefix)?;
     let raw_data = fs::read(path).map_err(Error::IoError)?;
     let data = zlib::decompress(raw_data);

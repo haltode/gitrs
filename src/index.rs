@@ -131,7 +131,7 @@ pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
             bytes_entry.extend(&big_endian::u32_to_u8(field));
         }
 
-        let compressed_hash = match sha1::hex_str_to_u8(&entry.hash) {
+        let compressed_hash = match sha1::compress_hash(&entry.hash) {
             Some(hash) => hash,
             None => {
                 return Err(Error::InvalidHash);
@@ -157,7 +157,7 @@ pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
     data.extend(&compressed_entries);
 
     let checksum = sha1::sha1(&data);
-    let compressed_hash = match sha1::hex_str_to_u8(&checksum) {
+    let compressed_hash = match sha1::compress_hash(&checksum) {
         Some(hash) => hash,
         None => {
             return Err(Error::InvalidHash);
