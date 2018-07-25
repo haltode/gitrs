@@ -1,5 +1,6 @@
 mod add;
 mod cat_file;
+mod commit;
 mod diff;
 mod hash_object;
 mod index;
@@ -108,6 +109,18 @@ fn main() {
             } else {
                 let hash = &args[2];
                 cat_file::cat_file(hash, "print");
+            }
+        }
+
+        "commit" => {
+            if args.len() == 2 {
+                println!("commit: command takes a 'message' argument.");
+            } else {
+                let message = &args[2];
+                match commit::commit(message) {
+                    Ok(hash) => println!("commit on master: {}", hash),
+                    Err(why) => println!("Could not commit: {:?}", why),
+                }
             }
         }
 
