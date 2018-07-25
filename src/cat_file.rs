@@ -7,7 +7,7 @@ pub fn cat_file(hash_prefix: &str, mode: &str) {
     let object = match object::get_object(hash_prefix) {
         Ok(obj) => obj,
         Err(why) => {
-            println!("cat_file: error while parsing the object: {:?}", why);
+            println!("cat-file: error while parsing the object: {:?}", why);
             return;
         }
     };
@@ -27,11 +27,11 @@ pub fn cat_file(hash_prefix: &str, mode: &str) {
                             println!("{:o} {} {}", entry.mode, entry.hash, entry.path);
                         }
                     }
-                    Err(why) => println!("cat_file: could not read tree object: {:?}", why),
+                    Err(why) => println!("cat-file: could not read tree object: {:?}", why),
                 };
             }
             tp => println!("unknown object type: {}", tp),
         },
-        fmt => println!("cat_file: unknown option mode: {}", fmt),
+        fmt => println!("cat-file: unknown option mode: {}", fmt),
     }
 }

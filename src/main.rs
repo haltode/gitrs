@@ -34,9 +34,9 @@ fn main() {
             }
         }
 
-        "hash_object" => {
+        "hash-object" => {
             if args.len() == 2 {
-                println!("hash_object: command takes a 'data' argument.");
+                println!("hash-object: command takes a 'data' argument.");
             } else {
                 let data = &args[2].as_bytes();
 
@@ -53,9 +53,9 @@ fn main() {
             }
         }
 
-        "cat_file" => {
+        "cat-file" => {
             if args.len() <= 3 {
-                println!("cat_file: command takes 'hash' and 'mode' as arguments.");
+                println!("cat-file: command takes 'hash' and 'mode' as arguments.");
             } else {
                 let hash_prefix = &args[2];
                 if cli::has_flag(&args, "--type", "-t") {
@@ -65,12 +65,12 @@ fn main() {
                 } else if cli::has_flag(&args, "--print", "-p") {
                     cat_file::cat_file(hash_prefix, "print");
                 } else {
-                    println!("cat_file: unknown 'mode' option.");
+                    println!("cat-file: unknown 'mode' option.");
                 }
             }
         }
 
-        "ls_files" => {
+        "ls-files" => {
             let stage = cli::has_flag(&args, "--stage", "-s");
             ls_files::ls_files(stage);
         }
@@ -98,14 +98,14 @@ fn main() {
             }
         }
 
-        "write_tree" => match write_tree::write_tree() {
+        "write-tree" => match write_tree::write_tree() {
             Ok(hash) => println!("{}", hash),
             Err(why) => println!("Could not create tree object: {:?}", why),
         },
 
-        "read_tree" => {
+        "read-tree" => {
             if args.len() == 2 {
-                println!("read_tree: command takes a 'hash' argument.");
+                println!("read-tree: command takes a 'hash' argument.");
             } else {
                 let hash = &args[2];
                 cat_file::cat_file(hash, "print");

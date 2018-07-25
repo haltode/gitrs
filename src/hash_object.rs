@@ -19,7 +19,7 @@ pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> io::Result<Strin
         let file = Path::new(&dir).join(&hash[2..]);
 
         if file.exists() {
-            println!("hash_object: file already exists (ignoring write)");
+            println!("hash-object: file already exists (ignoring write)");
         } else {
             fs::create_dir_all(&dir)?;
             let compressed_data = zlib::compress(full_data);
