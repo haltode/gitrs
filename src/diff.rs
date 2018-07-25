@@ -46,19 +46,21 @@ fn longest_common_subseq(a: &[&str], b: &[&str]) -> Vec<Vec<u32>> {
 fn lcs_diff(a: &[&str], b: &[&str]) -> Vec<(State, String)> {
     let mut res = Vec::new();
     let lcs = longest_common_subseq(a, b);
-    let mut i = a.len() - 1;
-    let mut j = b.len() - 1;
-    while i != 0 || j != 0 {
-        if i > 0 && j > 0 && a[i] == b[j] {
-            res.push((State::Eq, a[i].to_string()));
+    let mut i = a.len();
+    let mut j = b.len();
+    loop {
+        if i > 0 && j > 0 && a[i - 1] == b[j - 1] {
+            res.push((State::Eq, a[i - 1].to_string()));
             i -= 1;
             j -= 1;
         } else if j > 0 && (i == 0 || lcs[i][j - 1] >= lcs[i - 1][j]) {
-            res.push((State::Ins, b[j].to_string()));
+            res.push((State::Ins, b[j - 1].to_string()));
             j -= 1;
         } else if i > 0 && (j == 0 || lcs[i][j - 1] < lcs[i - 1][j]) {
-            res.push((State::Del, a[i].to_string()));
+            res.push((State::Del, a[i - 1].to_string()));
             i -= 1;
+        } else {
+            break;
         }
     }
     res.reverse();
