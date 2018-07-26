@@ -24,11 +24,12 @@ fn main() {
         print_help();
         return;
     }
+    let (args, flags) = cli::split_args_from_flags(args);
 
     let cmd = &args[1];
     match &cmd[..] {
         "init" => {
-            let default_path = String::from("");
+            let default_path = String::new();
             let path = args.get(2).unwrap_or(&default_path);
             if let Err(why) = init::init(path) {
                 println!("Could not initialize git repository: {:?}", why);
@@ -43,9 +44,9 @@ fn main() {
 
                 let default_obj_type = String::from("blob");
                 let obj_type =
-                    cli::get_flag_value(&args, "--type", "-t").unwrap_or(default_obj_type);
+                    cli::get_flag_value(&flags, "--type", "-t").unwrap_or(default_obj_type);
 
-                let write = cli::has_flag(&args, "--write", "-w");
+                let write = cli::has_flag(&flags, "--write", "-w");
 
                 match hash_object::hash_object(data, &obj_type, write) {
                     Ok(hash) => println!("{}", hash),
@@ -55,24 +56,19 @@ fn main() {
         }
 
         "cat-file" => {
-            if args.len() <= 3 {
+            if args.len() == 2 || flags.len() == 0 {
                 println!("cat-file: command takes 'hash' and 'mode' as arguments.");
             } else {
                 let hash_prefix = &args[2];
-                if cli::has_flag(&args, "--type", "-t") {
-                    cat_file::cat_file(hash_prefix, "type");
-                } else if cli::has_flag(&args, "--size", "-s") {
-                    cat_file::cat_file(hash_prefix, "size");
-                } else if cli::has_flag(&args, "--print", "-p") {
-                    cat_file::cat_file(hash_prefix, "print");
-                } else {
-                    println!("cat-file: unknown 'mode' option.");
+                let mode = &flags[0];
+                if let Err(why) = cat_file::cat_file(hash_prefix, mode) {
+                    println!("Cannot retrieve object info: {:?}", why);
                 }
             }
         }
 
         "ls-files" => {
-            let stage = cli::has_flag(&args, "--stage", "-s");
+            let stage = cli::has_flag(&flags, "--stage", "-s");
             ls_files::ls_files(stage);
         }
 
@@ -109,7 +105,9 @@ fn main() {
                 println!("read-tree: command takes a 'hash' argument.");
             } else {
                 let hash = &args[2];
-                cat_file::cat_file(hash, "print");
+                if let Err(why) = cat_file::cat_file(hash, "print") {
+                    println!("Cannot retrieve object info: {:?}", why);
+                }
             }
         }
 
@@ -126,18 +124,13 @@ fn main() {
         }
 
         "config" => {
-            if args.len() == 2 {
+            if flags.len() == 0 {
                 println!("config: command takes option such as '--add', '--list', etc.");
             } else {
-                let option = &args[2][2..];
-                let section = match args.get(3) {
-                    Some(s) => s,
-                    None => "",
-                };
-                let value = match args.get(4) {
-                    Some(s) => s,
-                    None => "",
-                };
+                let default_val = String::new();
+                let section = args.get(2).unwrap_or(&default_val);
+                let value = args.get(3).unwrap_or(&default_val);
+                let option = &flags[0][2..];
 
                 if let Err(why) = config::config(option, section, value) {
                     println!("Could not use config file: {:?}", why);
