@@ -38,9 +38,10 @@ pub enum Error {
 }
 
 pub fn read_entries() -> Result<Vec<Entry>, Error> {
+    let mut entries = Vec::new();
     let index = Path::new(".git").join("index");
     if !index.exists() {
-        return Ok(vec![]);
+        return Ok(entries);
     }
 
     let bytes = fs::read(index).map_err(Error::IoError)?;
@@ -54,7 +55,6 @@ pub fn read_entries() -> Result<Vec<Entry>, Error> {
     }
 
     let nb_entries = big_endian::u8_slice_to_u32(&bytes[8..]) as usize;
-    let mut entries = Vec::new();
     let mut idx = 12;
     for _ in 0..nb_entries {
         let mut fields = [0u32; 10];
@@ -149,6 +149,7 @@ pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
         compressed_entries.extend(&bytes_entry);
     }
 
+    // DIRC2
     let mut header = vec![68, 73, 82, 67, 0, 0, 0, 2];
     header.extend(&big_endian::u32_to_u8(entries.len() as u32));
 

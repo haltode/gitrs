@@ -29,9 +29,9 @@ pub fn commit(message: &str) -> Result<String, Error> {
     let user = config::parse_config().map_err(Error::ConfigError)?;
     let author = format!("{} <{}>", user.name, user.email);
 
-    // I decide where you live, alright?!
     let start = SystemTime::now();
     let timestamp = start.duration_since(UNIX_EPOCH).map_err(Error::TimeError)?;
+    // I decide where you live, alright?!
     let timezone = "+0200";
     let time = format!("{} {}", timestamp.as_secs(), timezone);
 

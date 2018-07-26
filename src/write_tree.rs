@@ -23,6 +23,7 @@ pub fn write_tree() -> Result<String, Error> {
         tree.extend(tree_entry.as_bytes());
         tree.extend(compressed_hash);
     }
+
     let write = true;
     let hash = hash_object::hash_object(&tree, "tree", write).map_err(Error::HashError)?;
     Ok(hash)

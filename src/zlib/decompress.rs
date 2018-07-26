@@ -1,13 +1,13 @@
-//  * DEFLATE Compressed Data Format Specification version 1.3
-//    https://tools.ietf.org/html/rfc1951
-//  * puff: a simple inflate written to specify the deflate format unambiguously
-//    https://github.com/madler/zlib/blob/master/contrib/puff/puff.c
-//  * Canonical Huffman code
-//    https://en.wikipedia.org/wiki/Canonical_Huffman_code
-//  * ZLIB Compressed Data Format Specification version 3.3
-//    https://tools.ietf.org/html/rfc1950
-//  * An Explanation of the Deflate Algorithm
-//    https://www.zlib.net/feldspar.html
+// * DEFLATE Compressed Data Format Specification version 1.3
+//   https://tools.ietf.org/html/rfc1951
+// * puff: a simple inflate written to specify the deflate format unambiguously
+//   https://github.com/madler/zlib/blob/master/contrib/puff/puff.c
+// * Canonical Huffman code
+//   https://en.wikipedia.org/wiki/Canonical_Huffman_code
+// * ZLIB Compressed Data Format Specification version 3.3
+//   https://tools.ietf.org/html/rfc1950
+// * An Explanation of the Deflate Algorithm
+//   https://www.zlib.net/feldspar.html
 
 const MAX_BITS: usize = 15;
 const MAX_L_CODES: usize = 286;

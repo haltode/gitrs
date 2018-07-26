@@ -14,13 +14,13 @@ pub fn parse_config() -> io::Result<Config> {
     if config_file.exists() {
         let data = fs::read_to_string(config_file)?;
         for line in data.lines().map(|l| l.trim()) {
-            let ele: Vec<&str> = line.split('=').collect();
-            if ele.len() != 2 {
+            let elem: Vec<&str> = line.split('=').collect();
+            if elem.len() != 2 {
                 continue;
             }
 
-            let section = ele[0].trim();
-            let value = ele[1].trim_left().to_string();
+            let section = elem[0].trim();
+            let value = elem[1].trim().to_string();
             if section == "name" {
                 name = value;
             } else if section == "email" {

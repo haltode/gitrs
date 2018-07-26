@@ -18,13 +18,12 @@ pub fn add(paths: &[String]) -> Result<(), Error> {
     entries.retain(|e| !paths.contains(&e.path));
 
     for path in paths {
-        let fpath = Path::new(&path);
-        let data = fs::read(&fpath).map_err(Error::IoError)?;
-        let meta = fs::metadata(&fpath).map_err(Error::IoError)?;
+        let file = Path::new(&path);
+        let data = fs::read(&file).map_err(Error::IoError)?;
+        let meta = fs::metadata(&file).map_err(Error::IoError)?;
 
         let write = true;
         let hash = hash_object::hash_object(&data, "blob", write).map_err(Error::HashError)?;
-        let flags = path.len() as u16;
 
         entries.push(index::Entry {
             ctime_sec: meta.ctime() as u32,
@@ -38,7 +37,7 @@ pub fn add(paths: &[String]) -> Result<(), Error> {
             gid: meta.gid(),
             size: meta.size() as u32,
             hash: hash,
-            flags: flags,
+            flags: path.len() as u16,
             path: path.to_string(),
         });
     }
