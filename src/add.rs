@@ -15,12 +15,9 @@ pub enum Error {
 
 pub fn add(paths: &[String]) -> Result<(), Error> {
     let mut entries = index::read_entries().map_err(Error::IndexError)?;
-    for path in paths {
-        let already_indexed = entries.iter().any(|e| &e.path == path);
-        if already_indexed {
-            continue;
-        }
+    entries.retain(|e| !paths.contains(&e.path));
 
+    for path in paths {
         let fpath = Path::new(&path);
         let data = fs::read(&fpath).map_err(Error::IoError)?;
         let meta = fs::metadata(&fpath).map_err(Error::IoError)?;
