@@ -3,8 +3,8 @@ use std::io;
 use std::path::Path;
 
 pub struct Config {
-    name: String,
-    email: String,
+    pub name: String,
+    pub email: String,
 }
 
 pub fn parse_config() -> io::Result<Config> {

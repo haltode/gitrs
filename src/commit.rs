@@ -4,11 +4,13 @@ use std::path::Path;
 use std::time;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use config;
 use hash_object;
 use write_tree;
 
 #[derive(Debug)]
 pub enum Error {
+    ConfigError(io::Error),
     HashError(io::Error),
     IoError(io::Error),
     TimeError(time::SystemTimeError),
@@ -24,10 +26,8 @@ pub fn commit(message: &str) -> Result<String, Error> {
         header.push_str(&format!("\nparent {}", parent));
     }
 
-    // TODO: git config
-    // I decide who you are, alright?!
-    let author = "me";
-    let committer = "me";
+    let user = config::parse_config().map_err(Error::ConfigError)?;
+    let author = format!("{} <{}>", user.name, user.email);
 
     // I decide where you live, alright?!
     let start = SystemTime::now();
@@ -40,7 +40,7 @@ pub fn commit(message: &str) -> Result<String, Error> {
          author {} {}\n\
          committer {} {}\n\n\
          {}",
-        header, author, time, committer, time, message
+        header, author, time, author, time, message
     );
 
     let write = true;
