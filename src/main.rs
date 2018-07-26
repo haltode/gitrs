@@ -1,6 +1,7 @@
 mod add;
 mod cat_file;
 mod commit;
+mod config;
 mod diff;
 mod hash_object;
 mod index;
@@ -120,6 +121,26 @@ fn main() {
                 match commit::commit(message) {
                     Ok(hash) => println!("commit on master: {}", hash),
                     Err(why) => println!("Could not commit: {:?}", why),
+                }
+            }
+        }
+
+        "config" => {
+            if args.len() == 2 {
+                println!("config: command takes option such as '--add', '--list', etc.");
+            } else {
+                let option = &args[2][2..];
+                let section = match args.get(3) {
+                    Some(s) => s,
+                    None => "",
+                };
+                let value = match args.get(4) {
+                    Some(s) => s,
+                    None => "",
+                };
+
+                if let Err(why) = config::config(option, section, value) {
+                    println!("Could not use config file: {:?}", why);
                 }
             }
         }
