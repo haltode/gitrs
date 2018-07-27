@@ -4,12 +4,14 @@ mod cli;
 mod environment;
 mod index;
 mod object;
+mod refs;
 mod sha1;
 mod zlib;
 
 use std::env;
 
 use builtin::add;
+use builtin::branch;
 use builtin::cat_file;
 use builtin::commit;
 use builtin::config;
@@ -143,6 +145,15 @@ fn main() {
                 if let Err(why) = config::config(option, section, value) {
                     println!("Could not use config file: {:?}", why);
                 }
+            }
+        }
+
+        "branch" => {
+            let default_val = String::new();
+            let name = args.get(2).unwrap_or(&default_val);
+            let flag = flags.get(0).unwrap_or(&default_val);
+            if let Err(why) = branch::branch(name, flag) {
+                println!("Could not use branch: {:?}", why);
             }
         }
 
