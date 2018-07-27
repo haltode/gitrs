@@ -11,6 +11,7 @@ use write_tree;
 #[derive(Debug)]
 pub enum Error {
     ConfigError(io::Error),
+    ConfigMissing,
     HashError(io::Error),
     IoError(io::Error),
     TimeError(time::SystemTimeError),
@@ -18,6 +19,15 @@ pub enum Error {
 }
 
 pub fn commit(message: &str) -> Result<String, Error> {
+    let user = config::parse_config().map_err(Error::ConfigError)?;
+    if user.name.is_empty() || user.email.is_empty() {
+        println!("Need to specify your name/email before committing:");
+        println!("\tgitrs config --add user.name your_name");
+        println!("\tgitrs config --add user.email your_email");
+        return Err(Error::ConfigMissing);
+    }
+    let author = format!("{} <{}>", user.name, user.email);
+
     let tree = write_tree::write_tree().map_err(Error::TreeError)?;
     let mut header = format!("tree {}", tree);
     let parent_commit = Path::new(".git").join("refs").join("heads").join("master");
@@ -25,9 +35,6 @@ pub fn commit(message: &str) -> Result<String, Error> {
         let parent = fs::read_to_string(&parent_commit).map_err(Error::IoError)?;
         header.push_str(&format!("\nparent {}", parent));
     }
-
-    let user = config::parse_config().map_err(Error::ConfigError)?;
-    let author = format!("{} <{}>", user.name, user.email);
 
     let start = SystemTime::now();
     let timestamp = start.duration_since(UNIX_EPOCH).map_err(Error::TimeError)?;
