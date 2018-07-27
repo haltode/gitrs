@@ -14,9 +14,6 @@ pub enum Error {
 }
 
 pub fn status() -> Result<(), Error> {
-    // TODO: show untracked files
-    // TODO: 'git rev-parse --show-toplevel'
-
     let index = index::read_entries().map_err(Error::IndexError)?;
     let files = get_all_files_path()?;
     for file in &files {
@@ -44,7 +41,6 @@ pub fn status() -> Result<(), Error> {
 
 fn get_all_files_path() -> Result<Vec<String>, Error> {
     let mut files = Vec::new();
-    // TODO: add actual .gitignore
     let ignored_files = match fs::read_to_string(".gitignore") {
         Ok(files) => files,
         Err(_) => String::new(),

@@ -67,8 +67,6 @@ fn lcs_diff(a: &[&str], b: &[&str]) -> Vec<(State, String)> {
     return res;
 }
 
-// TODO: add context format
-// TODO: take vec of files as parameters
 pub fn diff() -> Result<(), Error> {
     let entries = index::read_entries().map_err(Error::IndexError)?;
     for entry in &entries {

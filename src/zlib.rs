@@ -55,7 +55,6 @@ impl Encoder {
     }
 
     fn non_compressed(&mut self, nb_bytes: usize) -> Result<(), EncoderError> {
-        // TODO: temporary block header
         self.output.push(1);
 
         let start = self.input_idx;
@@ -300,7 +299,7 @@ impl Decoder {
             115, 131, 163, 195, 227, 258,
         ];
         const EXTRA_BITS: [u16; 29] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0
         ];
         const EXTRA_DIST: [u16; 30] = [
             1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025,
@@ -384,7 +383,7 @@ impl Decoder {
 
         // Build temporary table to read literal/length/distance afterwards
         const ORDER: [usize; 19] = [
-            16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
+            16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
         ];
         let mut length = [0; MAX_CODES];
         for idx in 0..ncode {

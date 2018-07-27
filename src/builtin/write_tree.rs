@@ -8,7 +8,6 @@ pub enum Error {
     IndexError(index::Error),
 }
 
-// TODO: recursive walk
 pub fn write_tree() -> Result<String, Error> {
     let mut tree = Vec::new();
     let entries = index::read_entries().map_err(Error::IndexError)?;
