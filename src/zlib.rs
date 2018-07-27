@@ -1,3 +1,105 @@
+use bits::{big_endian, little_endian};
+
+pub fn compress(input: Vec<u8>) -> Vec<u8> {
+    let mut state = Encoder::new(input);
+    if let Err(why) = state.compress() {
+        panic!("Error while compressing: {:?}", why);
+    }
+    state.output
+}
+
+pub fn decompress(input: Vec<u8>) -> Vec<u8> {
+    let mut state = Decoder::new(input);
+    if let Err(why) = state.decompress() {
+        panic!("Error while decompressing: {:?}", why);
+    }
+    state.output
+}
+
+pub struct Encoder {
+    input: Vec<u8>,
+    input_idx: usize,
+
+    pub output: Vec<u8>,
+}
+
+#[derive(Debug)]
+pub enum EncoderError {
+    OutOfInput,
+}
+
+impl Encoder {
+    pub fn new(input: Vec<u8>) -> Encoder {
+        Encoder {
+            input: input,
+            input_idx: 0,
+            output: Vec::new(),
+        }
+    }
+
+    pub fn compress(&mut self) -> Result<(), EncoderError> {
+        self.write_header();
+
+        // :D
+        let nb_bytes = self.input.len();
+        self.non_compressed(nb_bytes)?;
+
+        self.add_adler32_checksum();
+        Ok(())
+    }
+
+    fn write_header(&mut self) {
+        // CM = 8 CINFO = 7 FCHECK = 1 FDICT = 0 FLEVEL = 0
+        self.output.push(0x78);
+        self.output.push(1);
+    }
+
+    fn non_compressed(&mut self, nb_bytes: usize) -> Result<(), EncoderError> {
+        // TODO: temporary block header
+        self.output.push(1);
+
+        let start = self.input_idx;
+        let end = start + nb_bytes;
+        if end > self.input.len() {
+            return Err(EncoderError::OutOfInput);
+        }
+
+        let mut header = Vec::new();
+        header.extend_from_slice(&little_endian::u16_to_u8(nb_bytes as u16));
+        header.extend_from_slice(&little_endian::u16_to_u8(!nb_bytes as u16));
+
+        let data = &self.input[start..end];
+
+        self.output.extend(header);
+        self.output.extend(data);
+
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    fn fixed_huffman(&mut self) -> Result<(), EncoderError> {
+        unimplemented!()
+    }
+
+    #[allow(dead_code)]
+    fn dynamic_huffman(&mut self) -> Result<(), EncoderError> {
+        unimplemented!()
+    }
+
+    fn add_adler32_checksum(&mut self) {
+        let mut a: u32 = 1;
+        let mut b: u32 = 0;
+
+        for byte in 0..self.input.len() {
+            a = (a + self.input[byte] as u32) % 65521;
+            b = (b + a) % 65521;
+        }
+
+        let res = (b << 16) | a;
+        self.output.extend_from_slice(&big_endian::u32_to_u8(res));
+    }
+}
+
 // * DEFLATE Compressed Data Format Specification version 1.3
 //   https://tools.ietf.org/html/rfc1951
 // * puff: a simple inflate written to specify the deflate format unambiguously
@@ -16,7 +118,7 @@ const MAX_CODES: usize = MAX_L_CODES + MAX_D_CODES;
 const FIX_L_CODES: usize = 288;
 
 #[derive(Debug)]
-pub enum Error {
+pub enum DecoderError {
     HuffmanTableTooBig,
     InvalidBlockCodeHeader,
     InvalidBlockSize,
@@ -40,7 +142,7 @@ struct HuffmanTable {
 impl HuffmanTable {
     // Create the table to decode the canonical Huffman code described by the
     // `length` array
-    fn new(length: &[u16]) -> Result<HuffmanTable, Error> {
+    fn new(length: &[u16]) -> Result<HuffmanTable, DecoderError> {
         let mut table = HuffmanTable {
             count: [0; MAX_BITS + 1],
             symbol: [0; MAX_CODES],
@@ -56,7 +158,7 @@ impl HuffmanTable {
             codes_left <<= 1;
             codes_left -= table.count[len] as i32;
             if codes_left < 0 {
-                return Err(Error::TooManyCodes);
+                return Err(DecoderError::TooManyCodes);
             }
         }
 
@@ -79,7 +181,7 @@ impl HuffmanTable {
         Ok(table)
     }
 
-    fn decode_sym(&self, state: &mut Decoder) -> Result<u16, Error> {
+    fn decode_sym(&self, state: &mut Decoder) -> Result<u16, DecoderError> {
         let mut code = 0;
         let mut first = 0;
         let mut index = 0;
@@ -95,7 +197,7 @@ impl HuffmanTable {
             code <<= 1;
         }
 
-        Err(Error::OutOfCodes)
+        Err(DecoderError::OutOfCodes)
     }
 }
 
@@ -122,12 +224,12 @@ impl Decoder {
         }
     }
 
-    pub fn decompress(&mut self) -> Result<(), Error> {
+    pub fn decompress(&mut self) -> Result<(), DecoderError> {
         // Validate header (CM = 8 CINFO = 7 FCHECK = 1 FDICT = 0 FLEVEL = 0)
         let cmf = self.get_bits(8)?;
         let flg = self.get_bits(8)?;
         if cmf != 0x78 || flg != 1 {
-            return Err(Error::InvalidDataHeader);
+            return Err(DecoderError::InvalidDataHeader);
         }
         loop {
             let end_of_file = self.get_bits(1)?;
@@ -136,7 +238,7 @@ impl Decoder {
                 0 => self.non_compressed(),
                 1 => self.fixed_huffman(),
                 2 => self.dynamic_huffman(),
-                3 => Err(Error::InvalidBlockType),
+                3 => Err(DecoderError::InvalidBlockType),
                 _ => unreachable!(),
             }?;
             if end_of_file == 1 {
@@ -147,11 +249,11 @@ impl Decoder {
         Ok(())
     }
 
-    fn get_bits(&mut self, need: u32) -> Result<u16, Error> {
+    fn get_bits(&mut self, need: u32) -> Result<u16, DecoderError> {
         let mut val = self.bit_buf;
         while self.bit_cnt < need {
             if self.input_idx == self.input.len() {
-                return Err(Error::OutOfInput);
+                return Err(DecoderError::OutOfInput);
             }
             // Load a new byte
             let byte = self.input[self.input_idx] as u32;
@@ -167,7 +269,7 @@ impl Decoder {
     }
 
     // RFC 1951 - Section 3.2.4
-    fn non_compressed(&mut self) -> Result<(), Error> {
+    fn non_compressed(&mut self) -> Result<(), DecoderError> {
         // Ignore bits in buffer until next byte boundary (these data blocks
         // are byte-aligned)
         self.bit_buf = 0;
@@ -176,7 +278,7 @@ impl Decoder {
         let len = self.get_bits(16)?;
         let nlen = self.get_bits(16)?;
         if !nlen != len {
-            return Err(Error::InvalidBlockSize);
+            return Err(DecoderError::InvalidBlockSize);
         }
         // Non-compressed mode is as simple as reading `len` bytes
         for _ in 0..len {
@@ -192,13 +294,13 @@ impl Decoder {
         &mut self,
         len_table: &HuffmanTable,
         dist_table: &HuffmanTable,
-    ) -> Result<(), Error> {
+    ) -> Result<(), DecoderError> {
         const EXTRA_LEN: [u16; 29] = [
             3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99,
             115, 131, 163, 195, 227, 258,
         ];
         const EXTRA_BITS: [u16; 29] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0
+            0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0,
         ];
         const EXTRA_DIST: [u16; 30] = [
             1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025,
@@ -223,7 +325,7 @@ impl Decoder {
                 // Get length
                 symbol -= 257;
                 if symbol as usize > EXTRA_LEN.len() {
-                    return Err(Error::InvalidFixedCode);
+                    return Err(DecoderError::InvalidFixedCode);
                 }
                 let len =
                     EXTRA_LEN[symbol as usize] + self.get_bits(EXTRA_BITS[symbol as usize] as u32)?;
@@ -236,7 +338,7 @@ impl Decoder {
                 // Copy `len` bytes from `dist` bytes back
                 let dist = dist as usize;
                 if dist > self.output.len() {
-                    return Err(Error::InvalidDistTooFar);
+                    return Err(DecoderError::InvalidDistTooFar);
                 }
                 for _ in 0..len {
                     let prev = self.output[self.output.len() - dist];
@@ -249,7 +351,7 @@ impl Decoder {
     }
 
     // RFC 1951 - Section 3.2.6
-    fn fixed_huffman(&mut self) -> Result<(), Error> {
+    fn fixed_huffman(&mut self) -> Result<(), DecoderError> {
         let mut length = [0u16; FIX_L_CODES];
         for sym in 0..FIX_L_CODES {
             length[sym] = match sym {
@@ -271,18 +373,18 @@ impl Decoder {
     }
 
     // RFC 1951 - Section 3.2.7
-    fn dynamic_huffman(&mut self) -> Result<(), Error> {
+    fn dynamic_huffman(&mut self) -> Result<(), DecoderError> {
         // Lengths of each table
         let nlen: usize = self.get_bits(5)? as usize + 257;
         let ndist: usize = self.get_bits(5)? as usize + 1;
         let ncode: usize = self.get_bits(4)? as usize + 4;
         if nlen > MAX_L_CODES || ndist > MAX_D_CODES {
-            return Err(Error::HuffmanTableTooBig);
+            return Err(DecoderError::HuffmanTableTooBig);
         }
 
         // Build temporary table to read literal/length/distance afterwards
         const ORDER: [usize; 19] = [
-            16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+            16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
         ];
         let mut length = [0; MAX_CODES];
         for idx in 0..ncode {
@@ -301,7 +403,7 @@ impl Decoder {
                 let mut len = 0;
                 if symbol == 16 {
                     if idx == 0 {
-                        return Err(Error::InvalidBlockCodeHeader);
+                        return Err(DecoderError::InvalidBlockCodeHeader);
                     }
                     len = length[idx - 1];
                     symbol = 3 + self.get_bits(2)?;
@@ -312,7 +414,7 @@ impl Decoder {
                 }
 
                 if idx + symbol as usize > nlen + ndist {
-                    return Err(Error::InvalidBlockCodeHeader);
+                    return Err(DecoderError::InvalidBlockCodeHeader);
                 }
                 for _ in 0..symbol {
                     length[idx] = len;
@@ -322,7 +424,7 @@ impl Decoder {
         }
 
         if length[256] == 0 {
-            return Err(Error::MissingEndOfBlockCode);
+            return Err(DecoderError::MissingEndOfBlockCode);
         }
 
         let len_table = HuffmanTable::new(&length[..nlen])?;

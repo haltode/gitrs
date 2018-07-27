@@ -1,22 +1,24 @@
-mod add;
-mod cat_file;
-mod commit;
-mod config;
-mod diff;
-mod hash_object;
+mod bits;
+mod builtin;
+mod cli;
 mod index;
-mod init;
-mod ls_files;
 mod object;
-mod read_tree;
-mod status;
-mod utils;
-mod write_tree;
+mod sha1;
 mod zlib;
 
 use std::env;
 
-use utils::cli;
+use builtin::add;
+use builtin::cat_file;
+use builtin::commit;
+use builtin::config;
+use builtin::diff;
+use builtin::hash_object;
+use builtin::init;
+use builtin::ls_files;
+use builtin::read_tree;
+use builtin::status;
+use builtin::write_tree;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

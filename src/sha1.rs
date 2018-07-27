@@ -1,6 +1,6 @@
 use std::char;
 
-use utils::bits::big_endian;
+use bits::big_endian;
 
 fn format_input(input: &[u8]) -> Vec<u8> {
     let mut fmt_input = Vec::new();
@@ -128,7 +128,7 @@ pub fn decompress_hash(hash: &[u8]) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use utils::sha1::sha1;
+    use sha1::sha1;
 
     #[test]
     fn short() {

@@ -6,7 +6,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::str;
 
-use utils::bits::big_endian;
+use bits::big_endian;
 use zlib;
 
 pub struct Object {

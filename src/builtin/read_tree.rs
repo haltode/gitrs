@@ -2,7 +2,7 @@ use std::num;
 use std::str;
 
 use object;
-use utils::sha1;
+use sha1;
 
 #[derive(Debug)]
 pub struct Entry {

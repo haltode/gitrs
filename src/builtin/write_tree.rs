@@ -2,7 +2,7 @@ use std::io;
 
 use hash_object;
 use index;
-use utils::sha1;
+use sha1;
 
 #[derive(Debug)]
 pub enum Error {

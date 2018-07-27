@@ -6,8 +6,8 @@ use std::io;
 use std::path::Path;
 use std::str;
 
-use utils::bits::big_endian;
-use utils::sha1;
+use bits::big_endian;
+use sha1;
 
 #[derive(Debug)]
 pub struct Entry {

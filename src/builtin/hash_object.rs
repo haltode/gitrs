@@ -2,7 +2,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use utils::sha1;
+use sha1;
 use zlib;
 
 pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> io::Result<String> {
