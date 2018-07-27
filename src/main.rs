@@ -89,7 +89,8 @@ fn main() {
         }
 
         "diff" => {
-            if let Err(why) = diff::diff() {
+            let paths = &args[2..];
+            if let Err(why) = diff::diff(paths) {
                 println!("Could not show diff: {:?}", why);
             }
         }

@@ -67,10 +67,14 @@ fn lcs_diff(a: &[&str], b: &[&str]) -> Vec<(State, String)> {
     return res;
 }
 
-pub fn diff() -> Result<(), Error> {
+pub fn diff(paths: &[String]) -> Result<(), Error> {
     let entries = index::read_entries().map_err(Error::IndexError)?;
     for entry in &entries {
         let path = &entry.path;
+        if !paths.is_empty() && !paths.contains(path) {
+            continue;
+        }
+
         let hash = &entry.hash;
         let obj = object::get_object(hash).map_err(Error::ObjectError)?;
         if obj.obj_type != "blob" {
