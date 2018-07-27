@@ -1,6 +1,7 @@
 mod bits;
 mod builtin;
 mod cli;
+mod environment;
 mod index;
 mod object;
 mod sha1;
