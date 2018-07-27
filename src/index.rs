@@ -3,10 +3,10 @@
 
 use std::fs;
 use std::io;
-use std::path::Path;
 use std::str;
 
 use bits::big_endian;
+use environment;
 use sha1;
 
 #[derive(Debug)]
@@ -35,11 +35,14 @@ pub enum Error {
     InvalidIndexVersion,
     IoError(io::Error),
     Utf8Error(str::Utf8Error),
+    WorkingDirError(environment::Error),
 }
 
 pub fn read_entries() -> Result<Vec<Entry>, Error> {
     let mut entries = Vec::new();
-    let index = Path::new(".git").join("index");
+
+    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
+    let index = git_dir.join("index");
     if !index.exists() {
         return Ok(entries);
     }
@@ -166,7 +169,8 @@ pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
     };
     data.extend(&compressed_hash);
 
-    let index = Path::new(".git").join("index");
+    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
+    let index = git_dir.join("index");
     fs::write(index, &data).map_err(Error::IoError)?;
 
     Ok(())

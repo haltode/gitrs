@@ -1,24 +1,27 @@
 use std::fs;
 use std::io;
-use std::path::Path;
 use std::time;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use config;
+use environment;
 use hash_object;
 use write_tree;
 
 #[derive(Debug)]
 pub enum Error {
-    ConfigError(io::Error),
+    ConfigError(config::Error),
     ConfigMissing,
-    HashError(io::Error),
+    HashError(hash_object::Error),
     IoError(io::Error),
     TimeError(time::SystemTimeError),
     TreeError(write_tree::Error),
+    WorkingDirError(environment::Error),
 }
 
 pub fn commit(message: &str) -> Result<String, Error> {
+    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
+
     let user = config::parse_config().map_err(Error::ConfigError)?;
     if user.name.is_empty() || user.email.is_empty() {
         println!("Need to specify your name/email before committing:");
@@ -30,7 +33,7 @@ pub fn commit(message: &str) -> Result<String, Error> {
 
     let tree = write_tree::write_tree().map_err(Error::TreeError)?;
     let mut header = format!("tree {}", tree);
-    let parent_commit = Path::new(".git").join("refs").join("heads").join("master");
+    let parent_commit = git_dir.join("refs").join("heads").join("master");
     if parent_commit.exists() {
         let parent = fs::read_to_string(&parent_commit).map_err(Error::IoError)?;
         header.push_str(&format!("\nparent {}", parent));

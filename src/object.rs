@@ -3,10 +3,11 @@
 
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str;
 
 use bits::big_endian;
+use environment;
 use zlib;
 
 pub struct Object {
@@ -24,6 +25,7 @@ pub enum Error {
     IoError(io::Error),
     ObjectNotFound,
     Utf8Error(str::Utf8Error),
+    WorkingDirError(environment::Error),
 }
 
 pub fn get_object(hash_prefix: &str) -> Result<Object, Error> {
@@ -68,7 +70,8 @@ fn object_path(hash_prefix: &str) -> Result<PathBuf, Error> {
         return Err(Error::HashPrefixTooShort);
     }
 
-    let dir = Path::new(".git").join("objects").join(&hash_prefix[..2]);
+    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
+    let dir = git_dir.join("objects").join(&hash_prefix[..2]);
     let filename = &hash_prefix[2..];
     for file in fs::read_dir(dir).map_err(Error::IoError)? {
         let path = file.map_err(Error::IoError)?.path();

@@ -8,7 +8,7 @@ use index;
 
 #[derive(Debug)]
 pub enum Error {
-    HashError(io::Error),
+    HashError(hash_object::Error),
     IndexError(index::Error),
     IoError(io::Error),
 }

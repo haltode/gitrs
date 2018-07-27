@@ -22,13 +22,18 @@ use builtin::status;
 use builtin::write_tree;
 
 fn main() {
+    if !environment::is_inside_working_dir() {
+        println!("Not a git repository (or any of the parent directories)");
+        return;
+    }
+
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {
         print_help();
         return;
     }
-    let (args, flags) = cli::split_args_from_flags(args);
 
+    let (args, flags) = cli::split_args_from_flags(args);
     let cmd = &args[1];
     match &cmd[..] {
         "init" => {
@@ -53,7 +58,7 @@ fn main() {
 
                 match hash_object::hash_object(data, &obj_type, write) {
                     Ok(hash) => println!("{}", hash),
-                    Err(why) => println!("Cannot hash object: {}", why),
+                    Err(why) => println!("Cannot hash object: {:?}", why),
                 }
             }
         }

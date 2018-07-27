@@ -2,10 +2,17 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
+use environment;
 use sha1;
 use zlib;
 
-pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> io::Result<String> {
+#[derive(Debug)]
+pub enum Error {
+    IoError(io::Error),
+    WorkingDirError(environment::Error),
+}
+
+pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> Result<String, Error> {
     let header = format!("{} {}", obj_type, data.len());
     let mut full_data = Vec::new();
     full_data.extend(header.as_bytes());
@@ -15,15 +22,16 @@ pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> io::Result<Strin
     let hash = sha1::sha1(&full_data);
 
     if write {
-        let dir = Path::new(".git").join("objects").join(&hash[..2]);
+        let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
+        let dir = git_dir.join("objects").join(&hash[..2]);
         let file = Path::new(&dir).join(&hash[2..]);
 
         if file.exists() {
             println!("hash-object: file already exists (ignoring write)");
         } else {
-            fs::create_dir_all(&dir)?;
+            fs::create_dir_all(&dir).map_err(Error::IoError)?;
             let compressed_data = zlib::compress(full_data);
-            fs::write(&file, &compressed_data)?;
+            fs::write(&file, &compressed_data).map_err(Error::IoError)?;
         }
     }
 

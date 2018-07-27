@@ -1,12 +1,10 @@
-use std::io;
-
 use hash_object;
 use index;
 use sha1;
 
 #[derive(Debug)]
 pub enum Error {
-    HashError(io::Error),
+    HashError(hash_object::Error),
     IndexError(index::Error),
 }
 

@@ -8,7 +8,7 @@ use index;
 
 #[derive(Debug)]
 pub enum Error {
-    HashError(io::Error),
+    HashError(hash_object::Error),
     IndexError(index::Error),
     IoError(io::Error),
 }
@@ -44,6 +44,7 @@ pub fn status() -> Result<(), Error> {
 
 fn get_all_files_path() -> Result<Vec<String>, Error> {
     let mut files = Vec::new();
+    // TODO: add actual .gitignore
     let ignored_files = match fs::read_to_string(".gitignore") {
         Ok(files) => files,
         Err(_) => String::new(),
