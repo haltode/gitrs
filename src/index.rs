@@ -12,7 +12,7 @@ use environment;
 use hash_object;
 use sha1;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Entry {
     pub ctime_sec: u32,
     pub ctime_nan: u32,

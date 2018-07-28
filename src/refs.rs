@@ -10,7 +10,7 @@ pub enum Error {
     WorkingDirError(environment::Error),
 }
 
-fn format_ref_name(name: &str) -> String {
+pub fn format_ref_name(name: &str) -> String {
     match name.starts_with("refs/heads/") {
         true => name.to_string(),
         false => format!("refs/heads/{}", name),

@@ -13,6 +13,7 @@ use std::env;
 use builtin::add;
 use builtin::branch;
 use builtin::cat_file;
+use builtin::checkout;
 use builtin::commit;
 use builtin::config;
 use builtin::diff;
@@ -154,6 +155,17 @@ fn main() {
             let flag = flags.get(0).unwrap_or(&default_val);
             if let Err(why) = branch::branch(name, flag) {
                 println!("Could not use branch: {:?}", why);
+            }
+        }
+
+        "checkout" => {
+            if args.len() == 2 {
+                println!("checkout: command takes a 'ref' argument.");
+            } else {
+                let ref_name = &args[2];
+                if let Err(why) = checkout::checkout(ref_name) {
+                    println!("Could not checkout: {:?}", why);
+                }
             }
         }
 
