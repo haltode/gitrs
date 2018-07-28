@@ -3,10 +3,13 @@
 
 use std::fs;
 use std::io;
+use std::os::unix::fs::MetadataExt;
+use std::path::Path;
 use std::str;
 
 use bits::big_endian;
 use environment;
+use hash_object;
 use sha1;
 
 #[derive(Debug)]
@@ -29,6 +32,7 @@ pub struct Entry {
 #[derive(Debug)]
 pub enum Error {
     EntryMissingNullByteEnding,
+    HashError(hash_object::Error),
     InvalidChecksum,
     InvalidHash,
     InvalidHeaderSignature,
@@ -36,6 +40,31 @@ pub enum Error {
     IoError(io::Error),
     Utf8Error(str::Utf8Error),
     WorkingDirError(environment::Error),
+}
+
+pub fn new_entry(path: &str) -> Result<Entry, Error> {
+    let file = Path::new(&path);
+    let data = fs::read(&file).map_err(Error::IoError)?;
+    let meta = fs::metadata(&file).map_err(Error::IoError)?;
+
+    let write = true;
+    let hash = hash_object::hash_object(&data, "blob", write).map_err(Error::HashError)?;
+
+    Ok(Entry {
+        ctime_sec: meta.ctime() as u32,
+        ctime_nan: meta.ctime_nsec() as u32,
+        mtime_sec: meta.mtime() as u32,
+        mtime_nan: meta.mtime_nsec() as u32,
+        dev: meta.dev() as u32,
+        ino: meta.ino() as u32,
+        mode: meta.mode(),
+        uid: meta.uid(),
+        gid: meta.gid(),
+        size: meta.size() as u32,
+        hash: hash,
+        flags: path.len() as u16,
+        path: path.to_string(),
+    })
 }
 
 pub fn read_entries() -> Result<Vec<Entry>, Error> {
