@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 
+use cli;
 use environment;
 use refs;
 
@@ -11,7 +12,19 @@ pub enum Error {
     WorkingDirError(environment::Error),
 }
 
-pub fn branch(name: &str, flag: &str) -> Result<(), Error> {
+pub fn cmd_branch(args: &[String], flags: &[String]) {
+    let accepted_flags = ["--list", "-l"];
+    if cli::has_known_flags(flags, &accepted_flags) {
+        let default_val = String::new();
+        let name = args.get(0).unwrap_or(&default_val);
+        let flag = flags.get(0).unwrap_or(&default_val);
+        if let Err(why) = branch(name, flag) {
+            println!("Could not use branch: {:?}", why);
+        }
+    }
+}
+
+fn branch(name: &str, flag: &str) -> Result<(), Error> {
     let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
     let cur_branch = refs::head_ref().map_err(Error::RefError)?;
     let cur_hash = refs::get_ref(&cur_branch).map_err(Error::RefError)?;

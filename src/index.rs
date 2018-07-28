@@ -8,8 +8,8 @@ use std::path::Path;
 use std::str;
 
 use bits::big_endian;
+use builtin::hash_object;
 use environment;
-use hash_object;
 use sha1;
 
 #[derive(Debug, Clone)]

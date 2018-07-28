@@ -2,6 +2,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
+use cli;
 use environment;
 use sha1;
 use zlib;
@@ -10,6 +11,27 @@ use zlib;
 pub enum Error {
     IoError(io::Error),
     WorkingDirError(environment::Error),
+}
+
+pub fn cmd_hash_object(args: &[String], flags: &[String]) {
+    let accepted_flags = ["--type", "-t", "--write", "-w"];
+    if cli::has_known_flags(flags, &accepted_flags) {
+        if args.is_empty() {
+            println!("hash-object: command takes a 'data' argument.");
+        } else {
+            let data = &args[0].as_bytes();
+
+            let default_obj_type = String::from("blob");
+            let obj_type = cli::get_flag_value(flags, "--type", "-t").unwrap_or(default_obj_type);
+
+            let write = cli::has_flag(&flags, "--write", "-w");
+
+            match hash_object(data, &obj_type, write) {
+                Ok(hash) => println!("{}", hash),
+                Err(why) => println!("Cannot hash object: {:?}", why),
+            }
+        }
+    }
 }
 
 pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> Result<String, Error> {

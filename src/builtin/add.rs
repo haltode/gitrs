@@ -1,6 +1,12 @@
 use index;
 
-pub fn add(paths: &[String]) -> Result<(), index::Error> {
+pub fn cmd_add(args: &[String]) {
+    if let Err(why) = add(args) {
+        println!("Could not add paths: {:?}", why);
+    }
+}
+
+fn add(paths: &[String]) -> Result<(), index::Error> {
     let mut entries = index::read_entries()?;
     entries.retain(|e| !paths.contains(&e.path));
 

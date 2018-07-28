@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 
+use cli;
 use environment;
 
 pub struct Config {
@@ -12,6 +13,24 @@ pub struct Config {
 pub enum Error {
     IoError(io::Error),
     WorkingDirError(environment::Error),
+}
+
+pub fn cmd_config(args: &[String], flags: &[String]) {
+    let accepted_flags = ["--add", "--get", "--unset", "--list"];
+    if cli::has_known_flags(flags, &accepted_flags) {
+        if flags.is_empty() {
+            println!("config: command takes option such as '--add', '--list', etc.");
+        } else {
+            let default_val = String::new();
+            let section = args.get(0).unwrap_or(&default_val);
+            let value = args.get(1).unwrap_or(&default_val);
+            let option = &flags[0][2..];
+
+            if let Err(why) = config(option, section, value) {
+                println!("Could not use config file: {:?}", why);
+            }
+        }
+    }
 }
 
 pub fn parse_config() -> Result<Config, Error> {
@@ -43,7 +62,7 @@ pub fn parse_config() -> Result<Config, Error> {
     })
 }
 
-pub fn config(option: &str, section: &str, value: &str) -> Result<(), Error> {
+fn config(option: &str, section: &str, value: &str) -> Result<(), Error> {
     let mut user = parse_config()?;
     let mut modif = false;
     match option {
@@ -55,11 +74,13 @@ pub fn config(option: &str, section: &str, value: &str) -> Result<(), Error> {
                 sct => println!("config: unknown section '{}'", sct),
             }
         }
+
         "get" => match section {
             "user.name" => println!("{}", user.name),
             "user.email" => println!("{}", user.email),
             sct => println!("config: unknown section '{}'", sct),
         },
+
         "unset" => {
             modif = true;
             match section {
@@ -68,11 +89,13 @@ pub fn config(option: &str, section: &str, value: &str) -> Result<(), Error> {
                 sct => println!("config: unknown section '{}'", sct),
             }
         }
+
         "list" => {
             println!("user.name = {}", user.name);
             println!("user.email = {}", user.email);
         }
-        opt => println!("config: unknown option '{}'", opt),
+
+        _ => unreachable!(),
     }
 
     if modif {

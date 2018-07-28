@@ -2,7 +2,15 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-pub fn init(dir_name: &str) -> io::Result<()> {
+pub fn cmd_init(args: &[String]) {
+    let default_path = String::new();
+    let path = args.get(0).unwrap_or(&default_path);
+    if let Err(why) = init(path) {
+        println!("Could not initialize git repository: {:?}", why);
+    }
+}
+
+fn init(dir_name: &str) -> io::Result<()> {
     let dir_path = Path::new(dir_name);
     let git_path = Path::new(&dir_path).join(".git");
 

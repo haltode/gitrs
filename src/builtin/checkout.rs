@@ -22,8 +22,19 @@ pub enum Error {
     WorkingDirError(environment::Error),
 }
 
+pub fn cmd_checkout(args: &[String]) {
+    if args.is_empty() {
+        println!("checkout: command takes a 'ref' argument.");
+    } else {
+        let ref_name = &args[0];
+        if let Err(why) = checkout(ref_name) {
+            println!("Could not checkout: {:?}", why);
+        }
+    }
+}
+
 // TODO: handle detached HEAD
-pub fn checkout(ref_name: &str) -> Result<(), Error> {
+fn checkout(ref_name: &str) -> Result<(), Error> {
     let cur_commit = refs::get_ref(&ref_name).map_err(Error::RefError)?;
     let object = object::get_object(&cur_commit).map_err(Error::ObjectError)?;
     if object.obj_type != "commit" {

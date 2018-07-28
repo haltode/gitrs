@@ -1,7 +1,8 @@
 use std::str;
 
+use builtin::read_tree;
+use cli;
 use object;
-use read_tree;
 
 #[derive(Debug)]
 pub enum Error {
@@ -10,13 +11,28 @@ pub enum Error {
     Utf8Error(str::Utf8Error),
 }
 
+pub fn cmd_cat_file(args: &[String], flags: &[String]) {
+    let accepted_flags = ["--type", "-t", "--size", "-s", "--print", "-p"];
+    if cli::has_known_flags(flags, &accepted_flags) {
+        if args.is_empty() || flags.is_empty() {
+            println!("cat-file: command takes 'hash' and 'mode' as arguments.");
+        } else {
+            let hash_prefix = &args[0];
+            let mode = &flags[0];
+            if let Err(why) = cat_file(hash_prefix, mode) {
+                println!("Cannot retrieve object info: {:?}", why);
+            }
+        }
+    }
+}
+
 pub fn cat_file(hash_prefix: &str, mode: &str) -> Result<(), Error> {
     let object = object::get_object(hash_prefix).map_err(Error::ObjectError)?;
 
     match mode {
-        "--type" | "-t" | "type" => println!("{}", object.obj_type),
-        "--size" | "-s" | "size" => println!("{}", object.obj_size),
-        "--print" | "-p" | "print" => match object.obj_type.as_str() {
+        "--type" | "-t" => println!("{}", object.obj_type),
+        "--size" | "-s" => println!("{}", object.obj_size),
+        "--print" | "-p" => match object.obj_type.as_str() {
             "blob" | "commit" => {
                 let data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
                 println!("{}", data);
@@ -29,7 +45,7 @@ pub fn cat_file(hash_prefix: &str, mode: &str) -> Result<(), Error> {
             }
             tp => println!("unknown object type: {}", tp),
         },
-        fmt => println!("cat-file: unknown option mode: {}", fmt),
+        _ => unreachable!(),
     }
 
     Ok(())

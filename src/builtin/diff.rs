@@ -27,6 +27,12 @@ enum State {
     Eq,
 }
 
+pub fn cmd_diff(args: &[String]) {
+    if let Err(why) = diff(args) {
+        println!("Could not show diff: {:?}", why);
+    }
+}
+
 fn longest_common_subseq(a: &[&str], b: &[&str]) -> Vec<Vec<u32>> {
     let m = a.len() + 1;
     let n = b.len() + 1;
@@ -67,7 +73,7 @@ fn lcs_diff(a: &[&str], b: &[&str]) -> Vec<(State, String)> {
     return res;
 }
 
-pub fn diff(paths: &[String]) -> Result<(), Error> {
+fn diff(paths: &[String]) -> Result<(), Error> {
     let entries = index::read_entries().map_err(Error::IndexError)?;
     for entry in &entries {
         let path = &entry.path;

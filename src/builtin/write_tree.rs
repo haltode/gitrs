@@ -1,4 +1,4 @@
-use hash_object;
+use builtin::hash_object;
 use index;
 use sha1;
 
@@ -6,6 +6,13 @@ use sha1;
 pub enum Error {
     HashError(hash_object::Error),
     IndexError(index::Error),
+}
+
+pub fn cmd_write_tree() {
+    match write_tree() {
+        Ok(hash) => println!("{}", hash),
+        Err(why) => println!("Could not create tree object: {:?}", why),
+    };
 }
 
 pub fn write_tree() -> Result<String, Error> {

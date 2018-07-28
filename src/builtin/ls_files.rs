@@ -1,6 +1,15 @@
+use cli;
 use index;
 
-pub fn ls_files(stage: bool) {
+pub fn cmd_ls_files(flags: &[String]) {
+    let accepted_flags = ["--stage", "-s"];
+    if cli::has_known_flags(flags, &accepted_flags) {
+        let stage = cli::has_flag(&flags, "--stage", "-s");
+        ls_files(stage);
+    }
+}
+
+fn ls_files(stage: bool) {
     let entries = match index::read_entries() {
         Ok(e) => e,
         Err(why) => {

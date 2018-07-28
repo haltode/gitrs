@@ -1,6 +1,7 @@
 use std::num;
 use std::str;
 
+use builtin::cat_file;
 use object;
 use sha1;
 
@@ -20,6 +21,17 @@ pub enum Error {
     TreeEntryMissingMode,
     TreeEntryMissingPath,
     Utf8Error(str::Utf8Error),
+}
+
+pub fn cmd_read_tree(args: &[String]) {
+    if args.is_empty() {
+        println!("read-tree: command takes a 'hash' argument.");
+    } else {
+        let hash = &args[0];
+        if let Err(why) = cat_file::cat_file(hash, "--print") {
+            println!("Cannot retrieve object info: {:?}", why);
+        }
+    }
 }
 
 pub fn read_tree(hash_prefix: &str) -> Result<Vec<Entry>, Error> {

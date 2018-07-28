@@ -3,7 +3,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use hash_object;
+use builtin::hash_object;
 use index;
 
 #[derive(Debug)]
@@ -13,7 +13,13 @@ pub enum Error {
     IoError(io::Error),
 }
 
-pub fn status() -> Result<(), Error> {
+pub fn cmd_status() {
+    if let Err(why) = status() {
+        println!("Could not retrieve status: {:?}", why);
+    }
+}
+
+fn status() -> Result<(), Error> {
     let index = index::read_entries().map_err(Error::IndexError)?;
     let files = get_all_files_path()?;
     for file in &files {

@@ -3,12 +3,12 @@ use std::io;
 use std::time;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use config;
+use builtin::config;
+use builtin::hash_object;
+use builtin::write_tree;
 use environment;
-use hash_object;
 use object;
 use refs;
-use write_tree;
 
 #[derive(Debug)]
 pub enum Error {
@@ -24,7 +24,18 @@ pub enum Error {
     WorkingDirError(environment::Error),
 }
 
-pub fn commit(message: &str) -> Result<String, Error> {
+pub fn cmd_commit(args: &[String]) {
+    if args.is_empty() {
+        println!("commit: command takes a 'message' argument.");
+    } else {
+        let message = &args[0];
+        if let Err(why) = commit(message) {
+            println!("Could not commit: {:?}", why);
+        }
+    }
+}
+
+fn commit(message: &str) -> Result<String, Error> {
     let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
 
     let user = config::parse_config().map_err(Error::ConfigError)?;
