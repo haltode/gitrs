@@ -6,6 +6,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use config;
 use environment;
 use hash_object;
+use object;
+use refs;
 use write_tree;
 
 #[derive(Debug)]
@@ -14,6 +16,9 @@ pub enum Error {
     ConfigMissing,
     HashError(hash_object::Error),
     IoError(io::Error),
+    NothingToCommit,
+    ObjectError(object::Error),
+    RefError(refs::Error),
     TimeError(time::SystemTimeError),
     TreeError(write_tree::Error),
     WorkingDirError(environment::Error),
@@ -32,6 +37,20 @@ pub fn commit(message: &str) -> Result<String, Error> {
     let author = format!("{} <{}>", user.name, user.email);
 
     let tree = write_tree::write_tree().map_err(Error::TreeError)?;
+    let cur_branch = refs::head_ref().map_err(Error::RefError)?;
+    if refs::exists_ref(&cur_branch) {
+        let cur_commit = refs::get_ref(&cur_branch).map_err(Error::RefError)?;
+        let object = object::get_object(&cur_commit).map_err(Error::ObjectError)?;
+        if object.data.len() >= 45 {
+            let cur_hash: String = object.data[5..45].iter().map(|&x| x as char).collect();
+            if tree == cur_hash {
+                println!("On {}", cur_branch);
+                println!("nothing to commit, working tree clean");
+                return Err(Error::NothingToCommit);
+            }
+        }
+    }
+
     let mut header = format!("tree {}", tree);
     let parent_commit = git_dir.join("refs").join("heads").join("master");
     if parent_commit.exists() {

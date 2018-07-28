@@ -20,7 +20,9 @@ fn format_ref_name(name: &str) -> String {
 pub fn get_ref(name: &str) -> Result<String, Error> {
     let ref_name = format_ref_name(name);
     let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let val = fs::read_to_string(git_dir.join(ref_name)).map_err(Error::IoError)?;
+    let mut val = fs::read_to_string(git_dir.join(ref_name)).map_err(Error::IoError)?;
+    // Remove '\n' character
+    val.pop();
     Ok(val)
 }
 
@@ -29,6 +31,17 @@ pub fn write_ref(name: &str, value: &str) -> Result<(), Error> {
     let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
     fs::write(git_dir.join(ref_name), value).map_err(Error::IoError)?;
     Ok(())
+}
+
+pub fn exists_ref(name: &str) -> bool {
+    let ref_name = format_ref_name(name);
+    let git_dir = match environment::get_working_dir() {
+        Ok(d) => d,
+        Err(_) => {
+            return false;
+        }
+    };
+    git_dir.join(ref_name).exists()
 }
 
 pub fn head_ref() -> Result<String, Error> {
