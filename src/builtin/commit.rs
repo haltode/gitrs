@@ -37,22 +37,18 @@ pub fn commit(message: &str) -> Result<String, Error> {
     let author = format!("{} <{}>", user.name, user.email);
 
     let tree = write_tree::write_tree().map_err(Error::TreeError)?;
+    let mut header = format!("tree {}", tree);
     let cur_branch = refs::head_ref().map_err(Error::RefError)?;
     if refs::exists_ref(&cur_branch) {
         let cur_commit = refs::get_ref(&cur_branch).map_err(Error::RefError)?;
+        header.push_str(&format!("\nparent {}", cur_commit));
+
         let cur_hash = object::get_tree_from_commit(&cur_commit).map_err(Error::ObjectError)?;
         if tree == cur_hash {
             println!("On {}", cur_branch);
             println!("nothing to commit, working tree clean");
             return Err(Error::NothingToCommit);
         }
-    }
-
-    let mut header = format!("tree {}", tree);
-    let parent_commit = git_dir.join("refs").join("heads").join("master");
-    if parent_commit.exists() {
-        let parent = fs::read_to_string(&parent_commit).map_err(Error::IoError)?;
-        header.push_str(&format!("\nparent {}", parent));
     }
 
     let start = SystemTime::now();
@@ -73,6 +69,8 @@ pub fn commit(message: &str) -> Result<String, Error> {
     let hash = hash_object::hash_object(commit_content.as_bytes(), "commit", write)
         .map_err(Error::HashError)?;
 
-    fs::write(&parent_commit, format!("{}\n", hash)).map_err(Error::IoError)?;
+    let ref_path = git_dir.join("refs").join("heads").join(&cur_branch);
+    fs::write(ref_path, format!("{}\n", hash)).map_err(Error::IoError)?;
+    println!("commit on {}: {}", cur_branch, hash);
     Ok(hash)
 }

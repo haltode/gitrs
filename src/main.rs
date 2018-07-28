@@ -127,9 +127,8 @@ fn main() {
                 println!("commit: command takes a 'message' argument.");
             } else {
                 let message = &args[2];
-                match commit::commit(message) {
-                    Ok(hash) => println!("commit on master: {}", hash),
-                    Err(why) => println!("Could not commit: {:?}", why),
+                if let Err(why) = commit::commit(message) {
+                    println!("Could not commit: {:?}", why);
                 }
             }
         }
