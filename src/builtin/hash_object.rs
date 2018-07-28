@@ -26,9 +26,7 @@ pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> Result<String, E
         let dir = git_dir.join("objects").join(&hash[..2]);
         let file = Path::new(&dir).join(&hash[2..]);
 
-        if file.exists() {
-            println!("hash-object: file already exists (ignoring write)");
-        } else {
+        if !file.exists() {
             fs::create_dir_all(&dir).map_err(Error::IoError)?;
             let compressed_data = zlib::compress(full_data);
             fs::write(&file, &compressed_data).map_err(Error::IoError)?;
