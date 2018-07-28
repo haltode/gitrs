@@ -1,0 +1,14 @@
+#!/bin/sh
+
+gitrs="cargo run"
+
+./first_commit
+cd repo
+
+$gitrs branch new_b
+$gitrs checkout new_b
+echo "hey!" > hey
+$gitrs add hey
+$gitrs commit "second commit"
+$gitrs checkout master
+$gitrs checkout new_b
