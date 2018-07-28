@@ -29,7 +29,7 @@ pub fn get_ref(name: &str) -> Result<String, Error> {
 pub fn write_ref(name: &str, value: &str) -> Result<(), Error> {
     let ref_name = format_ref_name(name);
     let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    fs::write(git_dir.join(ref_name), value).map_err(Error::IoError)?;
+    fs::write(git_dir.join(ref_name), format!("{}\n", value)).map_err(Error::IoError)?;
     Ok(())
 }
 
