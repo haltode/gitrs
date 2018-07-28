@@ -33,35 +33,6 @@ pub fn cmd_config(args: &[String], flags: &[String]) {
     }
 }
 
-pub fn parse_config() -> Result<Config, Error> {
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let config_file = git_dir.join("config");
-    let mut name = String::new();
-    let mut email = String::new();
-    if config_file.exists() {
-        let data = fs::read_to_string(config_file).map_err(Error::IoError)?;
-        for line in data.lines().map(|l| l.trim()) {
-            let elem: Vec<&str> = line.split('=').collect();
-            if elem.len() != 2 {
-                continue;
-            }
-
-            let section = elem[0].trim();
-            let value = elem[1].trim().to_string();
-            if section == "name" {
-                name = value;
-            } else if section == "email" {
-                email = value;
-            }
-        }
-    }
-
-    Ok(Config {
-        name: name,
-        email: email,
-    })
-}
-
 fn config(option: &str, section: &str, value: &str) -> Result<(), Error> {
     let mut user = parse_config()?;
     let mut modif = false;
@@ -106,4 +77,33 @@ fn config(option: &str, section: &str, value: &str) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+pub fn parse_config() -> Result<Config, Error> {
+    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
+    let config_file = git_dir.join("config");
+    let mut name = String::new();
+    let mut email = String::new();
+    if config_file.exists() {
+        let data = fs::read_to_string(config_file).map_err(Error::IoError)?;
+        for line in data.lines().map(|l| l.trim()) {
+            let elem: Vec<&str> = line.split('=').collect();
+            if elem.len() != 2 {
+                continue;
+            }
+
+            let section = elem[0].trim();
+            let value = elem[1].trim().to_string();
+            if section == "name" {
+                name = value;
+            } else if section == "email" {
+                email = value;
+            }
+        }
+    }
+
+    Ok(Config {
+        name: name,
+        email: email,
+    })
 }

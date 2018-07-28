@@ -33,46 +33,6 @@ pub fn cmd_diff(args: &[String]) {
     }
 }
 
-fn longest_common_subseq(a: &[&str], b: &[&str]) -> Vec<Vec<u32>> {
-    let m = a.len() + 1;
-    let n = b.len() + 1;
-    let mut lcs = vec![vec![0u32; n]; m];
-    for i in 1..m {
-        for j in 1..n {
-            if a[i - 1] == b[j - 1] {
-                lcs[i][j] = lcs[i - 1][j - 1] + 1;
-            } else {
-                lcs[i][j] = cmp::max(lcs[i][j - 1], lcs[i - 1][j]);
-            }
-        }
-    }
-    return lcs;
-}
-
-fn lcs_diff(a: &[&str], b: &[&str]) -> Vec<(State, String)> {
-    let mut res = Vec::new();
-    let lcs = longest_common_subseq(a, b);
-    let mut i = a.len();
-    let mut j = b.len();
-    loop {
-        if i > 0 && j > 0 && a[i - 1] == b[j - 1] {
-            res.push((State::Eq, a[i - 1].to_string()));
-            i -= 1;
-            j -= 1;
-        } else if j > 0 && (i == 0 || lcs[i][j - 1] >= lcs[i - 1][j]) {
-            res.push((State::Ins, b[j - 1].to_string()));
-            j -= 1;
-        } else if i > 0 && (j == 0 || lcs[i][j - 1] < lcs[i - 1][j]) {
-            res.push((State::Del, a[i - 1].to_string()));
-            i -= 1;
-        } else {
-            break;
-        }
-    }
-    res.reverse();
-    return res;
-}
-
 fn diff(paths: &[String]) -> Result<(), Error> {
     let entries = index::read_entries().map_err(Error::IndexError)?;
     for entry in &entries {
@@ -108,4 +68,44 @@ fn diff(paths: &[String]) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+fn lcs_diff(a: &[&str], b: &[&str]) -> Vec<(State, String)> {
+    let mut res = Vec::new();
+    let lcs = longest_common_subseq(a, b);
+    let mut i = a.len();
+    let mut j = b.len();
+    loop {
+        if i > 0 && j > 0 && a[i - 1] == b[j - 1] {
+            res.push((State::Eq, a[i - 1].to_string()));
+            i -= 1;
+            j -= 1;
+        } else if j > 0 && (i == 0 || lcs[i][j - 1] >= lcs[i - 1][j]) {
+            res.push((State::Ins, b[j - 1].to_string()));
+            j -= 1;
+        } else if i > 0 && (j == 0 || lcs[i][j - 1] < lcs[i - 1][j]) {
+            res.push((State::Del, a[i - 1].to_string()));
+            i -= 1;
+        } else {
+            break;
+        }
+    }
+    res.reverse();
+    return res;
+}
+
+fn longest_common_subseq(a: &[&str], b: &[&str]) -> Vec<Vec<u32>> {
+    let m = a.len() + 1;
+    let n = b.len() + 1;
+    let mut lcs = vec![vec![0u32; n]; m];
+    for i in 1..m {
+        for j in 1..n {
+            if a[i - 1] == b[j - 1] {
+                lcs[i][j] = lcs[i - 1][j - 1] + 1;
+            } else {
+                lcs[i][j] = cmp::max(lcs[i][j - 1], lcs[i - 1][j]);
+            }
+        }
+    }
+    return lcs;
 }
