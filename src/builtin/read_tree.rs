@@ -33,7 +33,7 @@ pub fn read_tree(hash_prefix: &str) -> Result<Vec<Entry>, Error> {
     let mut start = 0;
     while start < object.data.len() {
         let end = match object.data[start..].iter().position(|&x| x == 0) {
-            Some(i) => i + 21,
+            Some(i) => start + i + 21,
             None => break,
         };
         let entry = &object.data[start..end];
@@ -75,7 +75,7 @@ pub fn read_tree(hash_prefix: &str) -> Result<Vec<Entry>, Error> {
             path: path,
             hash: hash.to_string(),
         });
-        start = end + 1;
+        start = end;
     }
 
     Ok(tree)
