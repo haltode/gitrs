@@ -40,14 +40,11 @@ pub fn commit(message: &str) -> Result<String, Error> {
     let cur_branch = refs::head_ref().map_err(Error::RefError)?;
     if refs::exists_ref(&cur_branch) {
         let cur_commit = refs::get_ref(&cur_branch).map_err(Error::RefError)?;
-        let object = object::get_object(&cur_commit).map_err(Error::ObjectError)?;
-        if object.data.len() >= 45 {
-            let cur_hash: String = object.data[5..45].iter().map(|&x| x as char).collect();
-            if tree == cur_hash {
-                println!("On {}", cur_branch);
-                println!("nothing to commit, working tree clean");
-                return Err(Error::NothingToCommit);
-            }
+        let cur_hash = object::get_tree_from_commit(&cur_commit).map_err(Error::ObjectError)?;
+        if tree == cur_hash {
+            println!("On {}", cur_branch);
+            println!("nothing to commit, working tree clean");
+            return Err(Error::NothingToCommit);
         }
     }
 
