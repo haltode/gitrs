@@ -72,7 +72,7 @@ fn commit(message: &str) -> Result<String, Error> {
         "{}\n\
          author {} {}\n\
          committer {} {}\n\n\
-         {}",
+         {}\n",
         header, author, time, author, time, message
     );
 
