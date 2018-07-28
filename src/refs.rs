@@ -46,7 +46,9 @@ pub fn exists_ref(name: &str) -> bool {
 
 pub fn head_ref() -> Result<String, Error> {
     let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let head = fs::read_to_string(git_dir.join("HEAD")).map_err(Error::IoError)?;
+    let mut head = fs::read_to_string(git_dir.join("HEAD")).map_err(Error::IoError)?;
+    // Remove '\n' character
+    head.pop();
     if !head.starts_with("ref: refs/heads/") {
         return Err(Error::InvalidHEADFile);
     }

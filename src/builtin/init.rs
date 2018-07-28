@@ -13,7 +13,7 @@ pub fn init(dir_name: &str) -> io::Result<()> {
     for dir in ["objects", "refs", "refs/heads"].iter() {
         fs::create_dir(Path::new(&git_path).join(dir))?;
     }
-    fs::write(Path::new(&git_path).join("HEAD"), "ref: refs/heads/master")?;
+    fs::write(Path::new(&git_path).join("HEAD"), "ref: refs/heads/master\n")?;
 
     println!("Initialized empty Git repository in {}", git_path.display());
     Ok(())
