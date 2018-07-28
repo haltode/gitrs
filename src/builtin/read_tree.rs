@@ -45,6 +45,7 @@ pub fn read_tree(hash_prefix: &str) -> Result<Vec<Entry>, Error> {
             }
         };
         let (mode, entry) = entry.split_at(space_byte);
+        let entry = &entry[1..];
 
         let null_byte = match entry.iter().position(|&x| x == 0) {
             Some(i) => i,
