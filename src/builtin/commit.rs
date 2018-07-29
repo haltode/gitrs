@@ -89,6 +89,6 @@ fn commit(message: &str) -> Result<String, Error> {
     };
     fs::write(out_dir, format!("{}\n", hash)).map_err(Error::IoError)?;
 
-    println!("commit on {}: {}", cur_branch, hash);
+    println!("[{} {}] {}", cur_branch, &hash[..7], message);
     Ok(hash)
 }
