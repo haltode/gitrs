@@ -52,18 +52,14 @@ pub fn read_tree(hash_prefix: &str) -> Result<Vec<Entry>, Error> {
 
         let space_byte = match entry.iter().position(|&x| x == 32) {
             Some(i) => i,
-            None => {
-                return Err(Error::TreeEntryMissingMode);
-            }
+            None => return Err(Error::TreeEntryMissingMode),
         };
         let (mode, entry) = entry.split_at(space_byte);
         let entry = &entry[1..];
 
         let null_byte = match entry.iter().position(|&x| x == 0) {
             Some(i) => i,
-            None => {
-                return Err(Error::TreeEntryMissingPath);
-            }
+            None => return Err(Error::TreeEntryMissingPath),
         };
         let (path, entry) = entry.split_at(null_byte);
 
@@ -77,9 +73,7 @@ pub fn read_tree(hash_prefix: &str) -> Result<Vec<Entry>, Error> {
         let path = str::from_utf8(&path).map_err(Error::Utf8Error)?.to_string();
         let hash = match sha1::decompress_hash(&hash) {
             Some(hash) => hash,
-            None => {
-                return Err(Error::TreeEntryInvalidHash);
-            }
+            None => return Err(Error::TreeEntryInvalidHash),
         };
 
         tree.push(Entry {

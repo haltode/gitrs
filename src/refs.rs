@@ -37,9 +37,7 @@ pub fn exists_ref(name: &str) -> bool {
     let ref_name = format_ref_name(name);
     let git_dir = match environment::get_working_dir() {
         Ok(d) => d,
-        Err(_) => {
-            return false;
-        }
+        Err(_) => return false,
     };
     git_dir.join(ref_name).exists()
 }
@@ -53,9 +51,7 @@ pub fn head_ref() -> Result<String, Error> {
     if head.starts_with("ref: refs/heads/") {
         let branch = match head.get(16..) {
             Some(b) => b.to_string(),
-            None => {
-                return Err(Error::InvalidHEADFile);
-            }
+            None => return Err(Error::InvalidHEADFile),
         };
         return Ok(branch);
     } else {

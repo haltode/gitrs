@@ -103,9 +103,7 @@ pub fn read_entries() -> Result<Vec<Entry>, Error> {
 
         let null_idx = match bytes[idx..].iter().position(|&x| x == 0) {
             Some(i) => i,
-            None => {
-                return Err(Error::EntryMissingNullByteEnding);
-            }
+            None => return Err(Error::EntryMissingNullByteEnding),
         };
         let path = str::from_utf8(&bytes[idx..idx + null_idx])
             .map_err(Error::Utf8Error)?
@@ -165,9 +163,7 @@ pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
 
         let compressed_hash = match sha1::compress_hash(&entry.hash) {
             Some(hash) => hash,
-            None => {
-                return Err(Error::InvalidHash);
-            }
+            None => return Err(Error::InvalidHash),
         };
         bytes_entry.extend(&compressed_hash);
         bytes_entry.extend(&big_endian::u16_to_u8(entry.flags));
@@ -192,9 +188,7 @@ pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
     let checksum = sha1::sha1(&data);
     let compressed_hash = match sha1::compress_hash(&checksum) {
         Some(hash) => hash,
-        None => {
-            return Err(Error::InvalidHash);
-        }
+        None => return Err(Error::InvalidHash),
     };
     data.extend(&compressed_hash);
 

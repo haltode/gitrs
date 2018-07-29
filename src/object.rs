@@ -36,9 +36,7 @@ pub fn get_object(hash_prefix: &str) -> Result<Object, Error> {
 
     let header_idx = match data.iter().position(|&x| x == 0) {
         Some(i) => i,
-        None => {
-            return Err(Error::HeaderMissingNullByte);
-        }
+        None => return Err(Error::HeaderMissingNullByte),
     };
     let (header, data) = data.split_at(header_idx);
 
@@ -46,15 +44,11 @@ pub fn get_object(hash_prefix: &str) -> Result<Object, Error> {
     let mut iter = header.split(|&x| x == 32);
     let obj_type = match iter.next() {
         Some(tp) => str::from_utf8(&tp).map_err(Error::Utf8Error)?.to_string(),
-        None => {
-            return Err(Error::HeaderMissingType);
-        }
+        None => return Err(Error::HeaderMissingType),
     };
     let obj_size = match iter.next() {
         Some(sz) => big_endian::u8_slice_to_usize(sz),
-        None => {
-            return Err(Error::HeaderMissingSize);
-        }
+        None => return Err(Error::HeaderMissingSize),
     };
     // Skip the null byte
     let data = data[1..].to_vec();
