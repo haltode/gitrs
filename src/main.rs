@@ -35,7 +35,7 @@ fn main() {
         "add" => builtin::add::cmd_add(&args),
         "write-tree" => builtin::write_tree::cmd_write_tree(),
         "read-tree" => builtin::read_tree::cmd_read_tree(&args),
-        "commit" => builtin::commit::cmd_commit(&args),
+        "commit" => builtin::commit::cmd_commit(&args, &flags),
         "config" => builtin::config::cmd_config(&args, &flags),
         "branch" => builtin::branch::cmd_branch(&args, &flags),
         "checkout" => builtin::checkout::cmd_checkout(&args),

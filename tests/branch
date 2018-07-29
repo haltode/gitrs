@@ -9,6 +9,6 @@ $gitrs branch new_b
 $gitrs checkout new_b
 echo "hey!" > hey
 $gitrs add hey
-$gitrs commit "second commit"
+$gitrs commit -m "second commit"
 $gitrs checkout master
 $gitrs checkout new_b

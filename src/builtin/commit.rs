@@ -6,6 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use builtin::config;
 use builtin::hash_object;
 use builtin::write_tree;
+use cli;
 use environment;
 use object;
 use refs;
@@ -24,13 +25,16 @@ pub enum Error {
     WorkingDirError(environment::Error),
 }
 
-pub fn cmd_commit(args: &[String]) {
-    if args.is_empty() {
-        println!("commit: command takes a 'message' argument.");
-    } else {
-        let message = &args[0];
-        if let Err(why) = commit(message) {
-            println!("Could not commit: {:?}", why);
+pub fn cmd_commit(args: &[String], flags: &[String]) {
+    let accepted_flags = ["--message", "-m"];
+    if cli::has_known_flags(flags, &accepted_flags) {
+        if cli::has_flag(flags, "--message", "-m") {
+            let message = &args[0];
+            if let Err(why) = commit(message) {
+                println!("Could not commit: {:?}", why);
+            }
+        } else {
+            println!("commit: command needs a '--message' flag.");
         }
     }
 }

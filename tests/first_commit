@@ -11,4 +11,4 @@ $gitrs config --add user.name "John Doe"
 $gitrs config --add user.email "john.doe@something.com"
 echo "hello world!" > hello
 $gitrs add hello
-$gitrs commit "initial commit"
+$gitrs commit -m "initial commit"
