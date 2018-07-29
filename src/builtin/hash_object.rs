@@ -20,7 +20,6 @@ pub fn cmd_hash_object(args: &[String], flags: &[String]) {
             println!("hash-object: command takes a 'data' argument.");
         } else {
             let data = &args[0].as_bytes();
-
             let obj_type = match cli::has_flag(flags, "--type", "-t") {
                 true => match &args.get(1) {
                     Some(t) => t,
@@ -31,7 +30,6 @@ pub fn cmd_hash_object(args: &[String], flags: &[String]) {
                 },
                 false => "blob",
             };
-
             let write = cli::has_flag(&flags, "--write", "-w");
 
             match hash_object(data, &obj_type, write) {
@@ -53,13 +51,13 @@ pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> Result<String, E
 
     if write {
         let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-        let dir = git_dir.join("objects").join(&hash[..2]);
-        let file = Path::new(&dir).join(&hash[2..]);
+        let obj_dir = git_dir.join("objects").join(&hash[..2]);
+        let obj_path = Path::new(&obj_dir).join(&hash[2..]);
 
-        if !file.exists() {
-            fs::create_dir_all(&dir).map_err(Error::IoError)?;
+        if !obj_path.exists() {
+            fs::create_dir_all(&obj_dir).map_err(Error::IoError)?;
             let compressed_data = zlib::compress(full_data);
-            fs::write(&file, &compressed_data).map_err(Error::IoError)?;
+            fs::write(&obj_path, &compressed_data).map_err(Error::IoError)?;
         }
     }
 

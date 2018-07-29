@@ -82,6 +82,7 @@ fn config(option: &str, section: &str, value: &str) -> Result<(), Error> {
 pub fn parse_config() -> Result<Config, Error> {
     let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
     let config_file = git_dir.join("config");
+
     let mut name = String::new();
     let mut email = String::new();
     if config_file.exists() {
@@ -92,7 +93,7 @@ pub fn parse_config() -> Result<Config, Error> {
                 continue;
             }
 
-            let section = elem[0].trim();
+            let section = elem[0].trim().to_string();
             let value = elem[1].trim().to_string();
             if section == "name" {
                 name = value;

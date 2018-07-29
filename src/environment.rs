@@ -33,7 +33,3 @@ pub fn get_working_dir() -> Result<PathBuf, Error> {
 
     Err(Error::WorkingDirNotFound)
 }
-
-pub fn is_inside_working_dir() -> bool {
-    get_working_dir().is_ok()
-}

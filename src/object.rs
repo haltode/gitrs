@@ -74,13 +74,13 @@ fn object_path(hash_prefix: &str) -> Result<PathBuf, Error> {
         return Err(Error::HashPrefixTooShort);
     }
 
+    let (dir, file) = hash_prefix.split_at(2);
     let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let dir = git_dir.join("objects").join(&hash_prefix[..2]);
-    let filename = &hash_prefix[2..];
-    for file in fs::read_dir(dir).map_err(Error::IoError)? {
-        let path = file.map_err(Error::IoError)?.path();
+    let objects = git_dir.join("objects").join(dir);
+    for f in fs::read_dir(objects).map_err(Error::IoError)? {
+        let path = f.map_err(Error::IoError)?.path();
         if let Some(f) = path.file_name() {
-            if f == filename {
+            if f == file {
                 return Ok(path.clone());
             }
         }

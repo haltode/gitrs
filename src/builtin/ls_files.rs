@@ -5,19 +5,14 @@ pub fn cmd_ls_files(flags: &[String]) {
     let accepted_flags = ["--stage", "-s"];
     if cli::has_known_flags(flags, &accepted_flags) {
         let stage = cli::has_flag(&flags, "--stage", "-s");
-        ls_files(stage);
+        if let Err(why) = ls_files(stage) {
+            println!("Could not print index files: {:?}", why);
+        }
     }
 }
 
-fn ls_files(stage: bool) {
-    let entries = match index::read_entries() {
-        Ok(e) => e,
-        Err(why) => {
-            println!("ls-files: error while reading git index: {:?}", why);
-            return;
-        }
-    };
-
+fn ls_files(stage: bool) -> Result<(), index::Error> {
+    let entries = index::read_entries()?;
     for entry in entries {
         if stage {
             let stage_nb = (entry.flags >> 12) & 3;
@@ -29,4 +24,6 @@ fn ls_files(stage: bool) {
             println!("{}", entry.path);
         }
     }
+
+    Ok(())
 }

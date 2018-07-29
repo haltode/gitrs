@@ -8,7 +8,7 @@ use index;
 
 #[derive(Debug)]
 pub enum Error {
-    HashError(hash_object::Error),
+    HashObjError(hash_object::Error),
     IndexError(index::Error),
     IoError(io::Error),
     WorkingDirError(environment::Error),
@@ -27,7 +27,7 @@ fn status() -> Result<(), Error> {
     for file in &files {
         let file_content = fs::read(&file).map_err(Error::IoError)?;
         let hash =
-            hash_object::hash_object(&file_content, "blob", false).map_err(Error::HashError)?;
+            hash_object::hash_object(&file_content, "blob", false).map_err(Error::HashObjError)?;
         hashes.push(hash.to_string());
 
         if index.iter().any(|e| hash == e.hash) {

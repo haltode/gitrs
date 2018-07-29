@@ -41,13 +41,12 @@ fn diff(paths: &[String]) -> Result<(), Error> {
             continue;
         }
 
-        let hash = &entry.hash;
-        let obj = object::get_object(hash).map_err(Error::ObjectError)?;
-        if obj.obj_type != "blob" {
+        let object = object::get_object(&entry.hash).map_err(Error::ObjectError)?;
+        if object.obj_type != "blob" {
             continue;
         }
 
-        let stored_data = str::from_utf8(&obj.data).map_err(Error::Utf8Error)?;
+        let stored_data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
         let actual_data = fs::read_to_string(path).map_err(Error::IoError)?;
 
         let stored_lines: Vec<&str> = stored_data.split("\n").collect();

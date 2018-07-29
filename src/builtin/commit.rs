@@ -15,7 +15,7 @@ use refs;
 pub enum Error {
     ConfigError(config::Error),
     ConfigMissing,
-    HashError(hash_object::Error),
+    HashObjError(hash_object::Error),
     IoError(io::Error),
     NothingToCommit,
     ObjectError(object::Error),
@@ -85,7 +85,7 @@ fn commit(message: &str) -> Result<String, Error> {
 
     let write = true;
     let hash = hash_object::hash_object(commit_content.as_bytes(), "commit", write)
-        .map_err(Error::HashError)?;
+        .map_err(Error::HashObjError)?;
 
     let out_dir = match refs::is_detached_head() {
         true => git_dir.join("HEAD"),

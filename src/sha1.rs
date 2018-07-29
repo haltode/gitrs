@@ -2,22 +2,6 @@ use std::char;
 
 use bits::big_endian;
 
-fn format_input(input: &[u8]) -> Vec<u8> {
-    let mut fmt_input = Vec::new();
-    let input_size = input.len();
-
-    fmt_input.extend(input);
-    fmt_input.push(0x80);
-
-    let padding = vec![0; 63 - ((input_size + 8) % 64)];
-    fmt_input.extend(padding);
-
-    let input_size_bits = 8 * input_size as u64;
-    fmt_input.extend_from_slice(&big_endian::u64_to_u8(input_size_bits));
-
-    fmt_input
-}
-
 pub fn sha1(data: &[u8]) -> String {
     let mut states = [
         0x67452301u32,
@@ -79,18 +63,20 @@ pub fn sha1(data: &[u8]) -> String {
     u32_hash_to_hex_str(&states)
 }
 
-pub fn u32_hash_to_hex_str(hash: &[u32; 5]) -> String {
-    hash.iter().map(|b| format!("{:08x}", b)).collect()
-}
+fn format_input(input: &[u8]) -> Vec<u8> {
+    let mut fmt_input = Vec::new();
+    let input_size = input.len();
 
-pub fn u8_slice_hash_to_hex_str(hash: &[u8]) -> String {
-    let mut states = [0u32; 5];
-    let mut idx = 0;
-    for s in 0..5 {
-        states[s] = big_endian::u8_slice_to_u32(&hash[idx..]);
-        idx += 4;
-    }
-    u32_hash_to_hex_str(&states)
+    fmt_input.extend(input);
+    fmt_input.push(0x80);
+
+    let padding = vec![0; 63 - ((input_size + 8) % 64)];
+    fmt_input.extend(padding);
+
+    let input_size_bits = 8 * input_size as u64;
+    fmt_input.extend_from_slice(&big_endian::u64_to_u8(input_size_bits));
+
+    fmt_input
 }
 
 pub fn compress_hash(hash: &str) -> Option<Vec<u8>> {
@@ -124,6 +110,20 @@ pub fn decompress_hash(hash: &[u8]) -> Option<String> {
     }
 
     Some(decompressed_hash)
+}
+
+pub fn u32_hash_to_hex_str(hash: &[u32; 5]) -> String {
+    hash.iter().map(|b| format!("{:08x}", b)).collect()
+}
+
+pub fn u8_slice_hash_to_hex_str(hash: &[u8]) -> String {
+    let mut states = [0u32; 5];
+    let mut idx = 0;
+    for s in 0..5 {
+        states[s] = big_endian::u8_slice_to_u32(&hash[idx..]);
+        idx += 4;
+    }
+    u32_hash_to_hex_str(&states)
 }
 
 #[cfg(test)]

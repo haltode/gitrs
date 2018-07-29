@@ -4,7 +4,7 @@ use sha1;
 
 #[derive(Debug)]
 pub enum Error {
-    HashError(hash_object::Error),
+    HashObjError(hash_object::Error),
     IndexError(index::Error),
 }
 
@@ -29,6 +29,6 @@ pub fn write_tree() -> Result<String, Error> {
     }
 
     let write = true;
-    let hash = hash_object::hash_object(&tree, "tree", write).map_err(Error::HashError)?;
+    let hash = hash_object::hash_object(&tree, "tree", write).map_err(Error::HashObjError)?;
     Ok(hash)
 }

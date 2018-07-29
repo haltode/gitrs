@@ -1,6 +1,5 @@
 use std::fs;
 use std::io;
-use std::path::Path;
 use std::str;
 
 use builtin::read_tree;
@@ -83,7 +82,7 @@ fn update_working_dir(ref_name: &str, tree_hash: &str) -> Result<(), Error> {
             // Modif (no merge at all or intelligent conflict marker, just mark everything as conflict)
             Some(e) => {
                 let blob_data = str::from_utf8(&blob.data).map_err(Error::Utf8Error)?;
-                let head_data = fs::read_to_string(Path::new(&entry.path)).map_err(Error::IoError)?;
+                let head_data = fs::read_to_string(&entry.path).map_err(Error::IoError)?;
                 if head_data != blob_data {
                     let conflict = format!(
                         "<<<<<< HEAD\n{}======\n{}>>>>>> {}\n",
@@ -98,7 +97,7 @@ fn update_working_dir(ref_name: &str, tree_hash: &str) -> Result<(), Error> {
             // Add
             None => {
                 fs::write(&entry.path, blob.data).map_err(Error::IoError)?;
-                let new_entry = index::new_entry(&entry.path).map_err(Error::IndexError)?;
+                let new_entry = index::Entry::new(&entry.path).map_err(Error::IndexError)?;
                 new_index.push(new_entry);
             }
         };

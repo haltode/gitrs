@@ -16,16 +16,17 @@ pub fn decompress(input: Vec<u8>) -> Vec<u8> {
     state.output
 }
 
-pub struct Encoder {
-    input: Vec<u8>,
-    input_idx: usize,
-
-    pub output: Vec<u8>,
-}
+// Encoder
 
 #[derive(Debug)]
 pub enum EncoderError {
     OutOfInput,
+}
+
+pub struct Encoder {
+    input: Vec<u8>,
+    input_idx: usize,
+    pub output: Vec<u8>,
 }
 
 impl Encoder {
@@ -80,11 +81,6 @@ impl Encoder {
         unimplemented!()
     }
 
-    #[allow(dead_code)]
-    fn dynamic_huffman(&mut self) -> Result<(), EncoderError> {
-        unimplemented!()
-    }
-
     fn add_adler32_checksum(&mut self) {
         let mut a: u32 = 1;
         let mut b: u32 = 0;
@@ -98,6 +94,8 @@ impl Encoder {
         self.output.extend_from_slice(&big_endian::u32_to_u8(res));
     }
 }
+
+// Decoder
 
 // * DEFLATE Compressed Data Format Specification version 1.3
 //   https://tools.ietf.org/html/rfc1951
@@ -208,7 +206,6 @@ pub struct Decoder {
     input_idx: usize,
     bit_buf: u32,
     bit_cnt: u32,
-
     pub output: Vec<u8>,
 }
 

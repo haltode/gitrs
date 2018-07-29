@@ -11,7 +11,7 @@ fn add(paths: &[String]) -> Result<(), index::Error> {
     entries.retain(|e| !paths.contains(&e.path));
 
     for path in paths {
-        let entry = index::new_entry(path)?;
+        let entry = index::Entry::new(path)?;
         entries.push(entry);
     }
 

@@ -11,7 +11,7 @@ mod zlib;
 use std::env;
 
 fn main() {
-    if !environment::is_inside_working_dir() {
+    if environment::get_working_dir().is_err() {
         println!("Not a git repository (or any of the parent directories)");
         return;
     }
