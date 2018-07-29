@@ -21,8 +21,16 @@ pub fn cmd_hash_object(args: &[String], flags: &[String]) {
         } else {
             let data = &args[0].as_bytes();
 
-            let default_obj_type = String::from("blob");
-            let obj_type = cli::get_flag_value(flags, "--type", "-t").unwrap_or(default_obj_type);
+            let obj_type = match cli::has_flag(flags, "--type", "-t") {
+                true => match &args.get(1) {
+                    Some(t) => t,
+                    None => {
+                        println!("hash-object: missing 'type' argument.");
+                        return;
+                    }
+                },
+                false => "blob",
+            };
 
             let write = cli::has_flag(&flags, "--write", "-w");
 
