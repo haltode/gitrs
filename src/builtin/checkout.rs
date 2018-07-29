@@ -33,9 +33,13 @@ pub fn cmd_checkout(args: &[String]) {
     }
 }
 
-// TODO: handle detached HEAD
 fn checkout(ref_name: &str) -> Result<(), Error> {
-    let cur_commit = refs::get_ref(&ref_name).map_err(Error::RefError)?;
+    let cur_commit = match refs::get_ref(&ref_name) {
+        Ok(r) => r,
+        Err(_) => ref_name.to_string(),
+    };
+    let is_detached_head = cur_commit == ref_name;
+
     let object = object::get_object(&cur_commit).map_err(Error::ObjectError)?;
     if object.obj_type != "commit" {
         return Err(Error::ReferenceNotACommit);
@@ -50,10 +54,20 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
     update_working_dir(ref_name, &tree)?;
 
     let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let full_ref = refs::format_ref_name(&ref_name);
-    fs::write(git_dir.join("HEAD"), format!("ref: {}\n", full_ref)).map_err(Error::IoError)?;
+    let head_dir = git_dir.join("HEAD");
+    if is_detached_head {
+        fs::write(head_dir, format!("{}\n", ref_name)).map_err(Error::IoError)?;
+    } else {
+        let full_ref = refs::format_ref_name(&ref_name);
+        fs::write(head_dir, format!("ref: {}\n", full_ref)).map_err(Error::IoError)?;
+    }
 
-    println!("Switched to branch {}", ref_name);
+    if is_detached_head {
+        println!("Note: checking out {}", ref_name);
+        println!("You are in detached HEAD state.");
+    } else {
+        println!("Switched to branch {}", ref_name);
+    }
     Ok(())
 }
 

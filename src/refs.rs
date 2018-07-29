@@ -49,15 +49,28 @@ pub fn head_ref() -> Result<String, Error> {
     let mut head = fs::read_to_string(git_dir.join("HEAD")).map_err(Error::IoError)?;
     // Remove '\n' character
     head.pop();
-    if !head.starts_with("ref: refs/heads/") {
-        return Err(Error::InvalidHEADFile);
-    }
-    let branch = match head.get(16..) {
-        Some(b) => b.to_string(),
-        None => {
-            return Err(Error::InvalidHEADFile);
-        }
-    };
 
-    Ok(branch)
+    if head.starts_with("ref: refs/heads/") {
+        let branch = match head.get(16..) {
+            Some(b) => b.to_string(),
+            None => {
+                return Err(Error::InvalidHEADFile);
+            }
+        };
+        return Ok(branch);
+    } else {
+        return Ok(head);
+    }
+}
+
+pub fn is_detached_head() -> bool {
+    let git_dir = match environment::get_working_dir() {
+        Ok(d) => d,
+        Err(_) => return false,
+    };
+    let head = match fs::read_to_string(git_dir.join("HEAD")) {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    !head.starts_with("ref: ")
 }

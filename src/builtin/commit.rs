@@ -50,8 +50,11 @@ fn commit(message: &str) -> Result<String, Error> {
     let tree = write_tree::write_tree().map_err(Error::TreeError)?;
     let mut header = format!("tree {}", tree);
     let cur_branch = refs::head_ref().map_err(Error::RefError)?;
-    if refs::exists_ref(&cur_branch) {
-        let cur_commit = refs::get_ref(&cur_branch).map_err(Error::RefError)?;
+    if refs::exists_ref(&cur_branch) || refs::is_detached_head() {
+        let cur_commit = match refs::get_ref(&cur_branch) {
+            Ok(r) => r,
+            Err(_) => cur_branch.to_string(),
+        };
         header.push_str(&format!("\nparent {}", cur_commit));
 
         let cur_hash = object::get_tree_from_commit(&cur_commit).map_err(Error::ObjectError)?;
@@ -80,8 +83,12 @@ fn commit(message: &str) -> Result<String, Error> {
     let hash = hash_object::hash_object(commit_content.as_bytes(), "commit", write)
         .map_err(Error::HashError)?;
 
-    let ref_path = git_dir.join("refs").join("heads").join(&cur_branch);
-    fs::write(ref_path, format!("{}\n", hash)).map_err(Error::IoError)?;
+    let out_dir = match refs::is_detached_head() {
+        true => git_dir.join("HEAD"),
+        false => git_dir.join("refs").join("heads").join(&cur_branch),
+    };
+    fs::write(out_dir, format!("{}\n", hash)).map_err(Error::IoError)?;
+
     println!("commit on {}: {}", cur_branch, hash);
     Ok(hash)
 }
