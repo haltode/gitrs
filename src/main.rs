@@ -1,7 +1,6 @@
 mod bits;
 mod builtin;
 mod cli;
-mod environment;
 mod index;
 mod object;
 mod refs;
@@ -9,13 +8,9 @@ mod sha1;
 mod zlib;
 
 use std::env;
+use std::path::Path;
 
 fn main() {
-    if environment::get_working_dir().is_err() {
-        println!("Not a git repository (or any of the parent directories)");
-        return;
-    }
-
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {
         print_help();
@@ -25,6 +20,11 @@ fn main() {
     let (args, flags) = cli::split_args_from_flags(args);
     let cmd = &args[1];
     let args = &args[2..];
+    if cmd != "init" && !Path::new(".git").exists() {
+        println!("Not a top-level git repository");
+        return;
+    }
+
     match cmd.as_str() {
         "init" => builtin::init::cmd_init(&args),
         "hash-object" => builtin::hash_object::cmd_hash_object(&args, &flags),

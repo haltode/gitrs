@@ -1,17 +1,16 @@
 use std::collections::VecDeque;
 use std::fs;
 use std::io;
+use std::path::PathBuf;
 
 use builtin::hash_object;
-use environment;
 use index;
 
 #[derive(Debug)]
 pub enum Error {
-    HashObjError(hash_object::Error),
+    HashObjError(io::Error),
     IndexError(index::Error),
     IoError(io::Error),
-    WorkingDirError(environment::Error),
 }
 
 pub fn cmd_status() {
@@ -47,13 +46,9 @@ fn status() -> Result<(), Error> {
 }
 
 fn get_all_files_path() -> Result<Vec<String>, Error> {
-    // Start out from top directory level
-    let mut git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    git_dir.pop();
-
     let mut files = Vec::new();
     let mut queue = VecDeque::new();
-    queue.push_back(git_dir);
+    queue.push_back(PathBuf::from("."));
     while let Some(dir) = queue.pop_front() {
         if let Some(dir_name) = dir.file_name() {
             if let Some(dir_name) = dir_name.to_str() {

@@ -1,9 +1,9 @@
 use std::fs;
 use std::io;
+use std::path::Path;
 use std::str;
 
 use builtin::read_tree;
-use environment;
 use index;
 use object;
 use refs;
@@ -18,7 +18,6 @@ pub enum Error {
     ReferenceNotACommit,
     TreeError(read_tree::Error),
     Utf8Error(str::Utf8Error),
-    WorkingDirError(environment::Error),
 }
 
 pub fn cmd_checkout(args: &[String]) {
@@ -52,8 +51,7 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
     let tree = object::get_tree_from_commit(&cur_commit).map_err(Error::ObjectError)?;
     update_working_dir(ref_name, &tree)?;
 
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let head_dir = git_dir.join("HEAD");
+    let head_dir = Path::new(".git").join("HEAD");
     if is_detached_head {
         fs::write(head_dir, format!("{}\n", ref_name)).map_err(Error::IoError)?;
     } else {

@@ -1,13 +1,11 @@
 use std::fs;
 use std::io;
-
-use environment;
+use std::path::Path;
 
 #[derive(Debug)]
 pub enum Error {
     InvalidHEADFile,
     IoError(io::Error),
-    WorkingDirError(environment::Error),
 }
 
 pub fn format_ref_name(name: &str) -> String {
@@ -19,8 +17,8 @@ pub fn format_ref_name(name: &str) -> String {
 
 pub fn get_ref(name: &str) -> Result<String, Error> {
     let ref_name = format_ref_name(name);
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let mut val = fs::read_to_string(git_dir.join(ref_name)).map_err(Error::IoError)?;
+    let ref_path = Path::new(".git").join(ref_name);
+    let mut val = fs::read_to_string(ref_path).map_err(Error::IoError)?;
     // Remove '\n' character
     val.pop();
     Ok(val)
@@ -28,23 +26,19 @@ pub fn get_ref(name: &str) -> Result<String, Error> {
 
 pub fn write_ref(name: &str, value: &str) -> Result<(), Error> {
     let ref_name = format_ref_name(name);
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    fs::write(git_dir.join(ref_name), format!("{}\n", value)).map_err(Error::IoError)?;
+    let ref_path = Path::new(".git").join(ref_name);
+    fs::write(ref_path, format!("{}\n", value)).map_err(Error::IoError)?;
     Ok(())
 }
 
 pub fn exists_ref(name: &str) -> bool {
     let ref_name = format_ref_name(name);
-    let git_dir = match environment::get_working_dir() {
-        Ok(d) => d,
-        Err(_) => return false,
-    };
-    git_dir.join(ref_name).exists()
+    Path::new(".git").join(ref_name).exists()
 }
 
 pub fn head_ref() -> Result<String, Error> {
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let mut head = fs::read_to_string(git_dir.join("HEAD")).map_err(Error::IoError)?;
+    let head_path = Path::new(".git").join("HEAD");
+    let mut head = fs::read_to_string(head_path).map_err(Error::IoError)?;
     // Remove '\n' character
     head.pop();
 
@@ -60,11 +54,8 @@ pub fn head_ref() -> Result<String, Error> {
 }
 
 pub fn is_detached_head() -> bool {
-    let git_dir = match environment::get_working_dir() {
-        Ok(d) => d,
-        Err(_) => return false,
-    };
-    let head = match fs::read_to_string(git_dir.join("HEAD")) {
+    let head_path = Path::new(".git").join("HEAD");
+    let head = match fs::read_to_string(head_path) {
         Ok(s) => s,
         Err(_) => return false,
     };

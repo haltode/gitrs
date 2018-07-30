@@ -1,18 +1,12 @@
 use std::fs;
 use std::io;
+use std::path::Path;
 
 use cli;
-use environment;
 
 pub struct Config {
     pub name: String,
     pub email: String,
-}
-
-#[derive(Debug)]
-pub enum Error {
-    IoError(io::Error),
-    WorkingDirError(environment::Error),
 }
 
 pub fn cmd_config(args: &[String], flags: &[String]) {
@@ -33,7 +27,7 @@ pub fn cmd_config(args: &[String], flags: &[String]) {
     }
 }
 
-fn config(option: &str, section: &str, value: &str) -> Result<(), Error> {
+fn config(option: &str, section: &str, value: &str) -> io::Result<()> {
     let mut user = parse_config()?;
     let mut modif = false;
     match option {
@@ -71,22 +65,20 @@ fn config(option: &str, section: &str, value: &str) -> Result<(), Error> {
 
     if modif {
         let config_fmt = format!("[user]\n\tname = {}\n\temail = {}\n", user.name, user.email);
-        let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-        let config_file = git_dir.join("config");
-        fs::write(config_file, config_fmt).map_err(Error::IoError)?;
+        let config_file = Path::new(".git").join("config");
+        fs::write(config_file, config_fmt)?;
     }
 
     Ok(())
 }
 
-pub fn parse_config() -> Result<Config, Error> {
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let config_file = git_dir.join("config");
-
+pub fn parse_config() -> io::Result<Config> {
     let mut name = String::new();
     let mut email = String::new();
+
+    let config_file = Path::new(".git").join("config");
     if config_file.exists() {
-        let data = fs::read_to_string(config_file).map_err(Error::IoError)?;
+        let data = fs::read_to_string(config_file)?;
         for line in data.lines().map(|l| l.trim()) {
             let elem: Vec<&str> = line.split('=').collect();
             if elem.len() != 2 {

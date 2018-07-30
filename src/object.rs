@@ -3,11 +3,10 @@
 
 use std::fs;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str;
 
 use bits::big_endian;
-use environment;
 use zlib;
 
 pub struct Object {
@@ -26,7 +25,6 @@ pub enum Error {
     IoError(io::Error),
     ObjectNotFound,
     Utf8Error(str::Utf8Error),
-    WorkingDirError(environment::Error),
 }
 
 pub fn get_object(hash_prefix: &str) -> Result<Object, Error> {
@@ -75,8 +73,7 @@ fn object_path(hash_prefix: &str) -> Result<PathBuf, Error> {
     }
 
     let (dir, file) = hash_prefix.split_at(2);
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let objects = git_dir.join("objects").join(dir);
+    let objects = Path::new(".git").join("objects").join(dir);
     for f in fs::read_dir(objects).map_err(Error::IoError)? {
         let path = f.map_err(Error::IoError)?.path();
         if let Some(f) = path.file_name() {

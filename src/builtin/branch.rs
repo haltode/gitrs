@@ -1,15 +1,14 @@
 use std::fs;
 use std::io;
+use std::path::Path;
 
 use cli;
-use environment;
 use refs;
 
 #[derive(Debug)]
 pub enum Error {
     IoError(io::Error),
     RefError(refs::Error),
-    WorkingDirError(environment::Error),
 }
 
 pub fn cmd_branch(args: &[String], flags: &[String]) {
@@ -25,12 +24,11 @@ pub fn cmd_branch(args: &[String], flags: &[String]) {
 }
 
 fn branch(name: &str, flag: &str) -> Result<(), Error> {
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
     let cur_branch = refs::head_ref().map_err(Error::RefError)?;
     let cur_hash = refs::get_ref(&cur_branch).map_err(Error::RefError)?;
 
     if flag == "--list" || flag == "-l" || name.is_empty() {
-        let refs_dir = git_dir.join("refs").join("heads");
+        let refs_dir = Path::new(".git").join("refs").join("heads");
         for entry in fs::read_dir(refs_dir).map_err(Error::IoError)? {
             let path = entry.map_err(Error::IoError)?.path();
             if path.is_dir() {

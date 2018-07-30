@@ -4,24 +4,23 @@
 use std::fs;
 use std::io;
 use std::os::unix::fs::MetadataExt;
+use std::path::Path;
 use std::str;
 
 use bits::big_endian;
 use builtin::hash_object;
-use environment;
 use sha1;
 
 #[derive(Debug)]
 pub enum Error {
     EntryMissingNullByteEnding,
-    HashObjError(hash_object::Error),
+    HashObjError(io::Error),
     InvalidChecksum,
     InvalidHash,
     InvalidHeaderSignature,
     InvalidIndexVersion,
     IoError(io::Error),
     Utf8Error(str::Utf8Error),
-    WorkingDirError(environment::Error),
 }
 
 #[derive(Debug, Clone)]
@@ -70,8 +69,7 @@ impl Entry {
 pub fn read_entries() -> Result<Vec<Entry>, Error> {
     let mut entries = Vec::new();
 
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let index = git_dir.join("index");
+    let index = Path::new(".git").join("index");
     if !index.exists() {
         return Ok(entries);
     }
@@ -192,8 +190,7 @@ pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
     };
     data.extend(&compressed_hash);
 
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-    let index = git_dir.join("index");
+    let index = Path::new(".git").join("index");
     fs::write(index, &data).map_err(Error::IoError)?;
 
     Ok(())

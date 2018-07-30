@@ -3,15 +3,8 @@ use std::io;
 use std::path::Path;
 
 use cli;
-use environment;
 use sha1;
 use zlib;
-
-#[derive(Debug)]
-pub enum Error {
-    IoError(io::Error),
-    WorkingDirError(environment::Error),
-}
 
 pub fn cmd_hash_object(args: &[String], flags: &[String]) {
     let accepted_flags = ["--type", "-t", "--write", "-w"];
@@ -40,7 +33,7 @@ pub fn cmd_hash_object(args: &[String], flags: &[String]) {
     }
 }
 
-pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> Result<String, Error> {
+pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> io::Result<String> {
     let header = format!("{} {}", obj_type, data.len());
     let mut full_data = Vec::new();
     full_data.extend(header.as_bytes());
@@ -50,14 +43,13 @@ pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> Result<String, E
     let hash = sha1::sha1(&full_data);
 
     if write {
-        let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-        let obj_dir = git_dir.join("objects").join(&hash[..2]);
+        let obj_dir = Path::new(".git").join("objects").join(&hash[..2]);
         let obj_path = Path::new(&obj_dir).join(&hash[2..]);
 
         if !obj_path.exists() {
-            fs::create_dir_all(&obj_dir).map_err(Error::IoError)?;
+            fs::create_dir_all(&obj_dir)?;
             let compressed_data = zlib::compress(full_data);
-            fs::write(&obj_path, &compressed_data).map_err(Error::IoError)?;
+            fs::write(&obj_path, &compressed_data)?;
         }
     }
 

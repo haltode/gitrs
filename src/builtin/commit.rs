@@ -1,5 +1,6 @@
 use std::fs;
 use std::io;
+use std::path::Path;
 use std::time;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -7,22 +8,20 @@ use builtin::config;
 use builtin::hash_object;
 use builtin::write_tree;
 use cli;
-use environment;
 use object;
 use refs;
 
 #[derive(Debug)]
 pub enum Error {
-    ConfigError(config::Error),
+    ConfigError(io::Error),
     ConfigMissing,
-    HashObjError(hash_object::Error),
+    HashObjError(io::Error),
     IoError(io::Error),
     NothingToCommit,
     ObjectError(object::Error),
     RefError(refs::Error),
     TimeError(time::SystemTimeError),
     TreeError(write_tree::Error),
-    WorkingDirError(environment::Error),
 }
 
 pub fn cmd_commit(args: &[String], flags: &[String]) {
@@ -40,8 +39,6 @@ pub fn cmd_commit(args: &[String], flags: &[String]) {
 }
 
 fn commit(message: &str) -> Result<String, Error> {
-    let git_dir = environment::get_working_dir().map_err(Error::WorkingDirError)?;
-
     let user = config::parse_config().map_err(Error::ConfigError)?;
     if user.name.is_empty() || user.email.is_empty() {
         println!("Need to specify your name/email before committing:");
@@ -88,8 +85,11 @@ fn commit(message: &str) -> Result<String, Error> {
         .map_err(Error::HashObjError)?;
 
     let out_dir = match refs::is_detached_head() {
-        true => git_dir.join("HEAD"),
-        false => git_dir.join("refs").join("heads").join(&cur_branch),
+        true => Path::new(".git").join("HEAD"),
+        false => Path::new(".git")
+            .join("refs")
+            .join("heads")
+            .join(&cur_branch),
     };
     fs::write(out_dir, format!("{}\n", hash)).map_err(Error::IoError)?;
 
