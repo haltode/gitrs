@@ -22,22 +22,22 @@ pub fn cmd_status() {
 fn status() -> Result<(), Error> {
     let index = index::read_entries().map_err(Error::IndexError)?;
     let files = get_all_files_path()?;
-    let mut hashes = Vec::new();
     for file in &files {
-        let file_content = fs::read(&file).map_err(Error::IoError)?;
-        let hash =
-            hash_object::hash_object(&file_content, "blob", false).map_err(Error::HashObjError)?;
-        hashes.push(hash.to_string());
-
-        if index.iter().any(|e| hash == e.hash) {
-            println!("modified: {}", file);
-        } else {
-            println!("new: {}", file);
-        }
+        match index.iter().find(|e| file == &e.path) {
+            Some(e) => {
+                let file_content = fs::read(&file).map_err(Error::IoError)?;
+                let hash = hash_object::hash_object(&file_content, "blob", false)
+                    .map_err(Error::HashObjError)?;
+                if e.hash != hash {
+                    println!("modified: {}", file);
+                }
+            }
+            None => println!("new: {}", file),
+        };
     }
 
     for entry in &index {
-        if !hashes.contains(&entry.hash) {
+        if files.iter().all(|x| x != &entry.path) {
             println!("deleted: {}", entry.path);
         }
     }
