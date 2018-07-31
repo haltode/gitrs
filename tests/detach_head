@@ -1,0 +1,14 @@
+#!/bin/sh
+
+gitrs="cargo run"
+
+./branch
+cd repo
+
+last_commit=`git rev-parse HEAD`
+echo "test detach" > detach
+$gitrs add detach
+$gitrs commit -m "commit detach"
+$gitrs checkout $last_commit
+$gitrs checkout master
+$gitrs checkout $last_commit
