@@ -16,6 +16,7 @@ pub enum Error {
     ConfigError(io::Error),
     ConfigMissing,
     HashObjError(io::Error),
+    InvalidTree,
     IoError(io::Error),
     NothingToCommit,
     ObjectError(object::Error),
@@ -58,7 +59,7 @@ fn commit(message: &str) -> Result<String, Error> {
         };
         header.push_str(&format!("\nparent {}", cur_commit));
 
-        let cur_hash = object::get_tree_from_commit(&cur_commit).map_err(Error::ObjectError)?;
+        let cur_hash = get_tree(&cur_commit)?;
         if tree == cur_hash {
             println!("On {}", cur_branch);
             println!("nothing to commit, working tree clean");
@@ -95,4 +96,13 @@ fn commit(message: &str) -> Result<String, Error> {
 
     println!("[{} {}] {}", cur_branch, &hash[..7], message);
     Ok(hash)
+}
+
+pub fn get_tree(hash: &str) -> Result<String, Error> {
+    let object = object::get_object(&hash).map_err(Error::ObjectError)?;
+    if object.data.len() < 45 {
+        return Err(Error::InvalidTree);
+    }
+    let tree: String = object.data[5..45].iter().map(|&x| x as char).collect();
+    Ok(tree)
 }

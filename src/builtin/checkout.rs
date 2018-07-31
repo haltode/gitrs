@@ -2,6 +2,7 @@ use std::fs;
 use std::io;
 use std::str;
 
+use builtin::commit;
 use builtin::read_tree;
 use builtin::status;
 use index;
@@ -11,6 +12,7 @@ use refs;
 #[derive(Debug)]
 pub enum Error {
     AlreadyOnIt,
+    CommitError(commit::Error),
     IndexError(index::Error),
     IoError(io::Error),
     ObjectError(object::Error),
@@ -53,7 +55,7 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
         return Err(Error::AlreadyOnIt);
     }
 
-    let tree = object::get_tree_from_commit(&commit).map_err(Error::ObjectError)?;
+    let tree = commit::get_tree(&commit).map_err(Error::CommitError)?;
     update_working_dir(ref_name, &tree)?;
 
     refs::write_to_ref("HEAD", ref_name).map_err(Error::RefError)?;

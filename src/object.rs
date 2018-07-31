@@ -21,7 +21,6 @@ pub enum Error {
     HeaderMissingNullByte,
     HeaderMissingSize,
     HeaderMissingType,
-    InvalidObject,
     IoError(io::Error),
     ObjectNotFound,
     Utf8Error(str::Utf8Error),
@@ -56,15 +55,6 @@ pub fn get_object(hash_prefix: &str) -> Result<Object, Error> {
         obj_size,
         data,
     })
-}
-
-pub fn get_tree_from_commit(hash: &str) -> Result<String, Error> {
-    let object = get_object(&hash)?;
-    if object.data.len() < 45 {
-        return Err(Error::InvalidObject);
-    }
-    let tree: String = object.data[5..45].iter().map(|&x| x as char).collect();
-    Ok(tree)
 }
 
 fn object_path(hash_prefix: &str) -> Result<PathBuf, Error> {
