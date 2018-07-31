@@ -7,6 +7,7 @@ pub mod config;
 pub mod diff;
 pub mod hash_object;
 pub mod init;
+pub mod log;
 pub mod ls_files;
 pub mod read_tree;
 pub mod status;

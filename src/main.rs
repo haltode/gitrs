@@ -37,6 +37,7 @@ fn main() {
         "read-tree" => builtin::read_tree::cmd_read_tree(&args),
         "commit" => builtin::commit::cmd_commit(&args, &flags),
         "config" => builtin::config::cmd_config(&args, &flags),
+        "log" => builtin::log::cmd_log(),
         "branch" => builtin::branch::cmd_branch(&args, &flags),
         "checkout" => builtin::checkout::cmd_checkout(&args),
         "help" | _ => print_help(),
