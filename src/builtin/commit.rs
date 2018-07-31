@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::path::Path;
+use std::str;
 use std::time;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -23,6 +24,7 @@ pub enum Error {
     RefError(io::Error),
     TimeError(time::SystemTimeError),
     TreeError(write_tree::Error),
+    Utf8Error(str::Utf8Error),
 }
 
 pub fn cmd_commit(args: &[String], flags: &[String]) {
@@ -100,9 +102,30 @@ fn commit(message: &str) -> Result<String, Error> {
 
 pub fn get_tree(hash: &str) -> Result<String, Error> {
     let object = object::get_object(&hash).map_err(Error::ObjectError)?;
-    if object.data.len() < 45 {
+    let data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
+    if !data.starts_with("tree ") || data.len() < 45 {
         return Err(Error::InvalidTree);
     }
-    let tree: String = object.data[5..45].iter().map(|&x| x as char).collect();
+    let tree = data[5..45].to_string();
     Ok(tree)
+}
+
+pub fn get_parent(hash: &str) -> Result<String, Error> {
+    let object = object::get_object(&hash).map_err(Error::ObjectError)?;
+    let data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
+    let data = match data.get(46..) {
+        Some(d) => d,
+        None => return Err(Error::InvalidTree),
+    };
+    let parent = match data.starts_with("parent ") {
+        true => {
+            if data.len() < 47 {
+                return Err(Error::InvalidTree);
+            } else {
+                data[7..47].to_string()
+            }
+        }
+        false => String::new(),
+    };
+    Ok(parent)
 }
