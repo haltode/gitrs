@@ -2,55 +2,56 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-#[derive(Debug)]
-pub enum Error {
-    InvalidHEADFile,
-    IoError(io::Error),
-}
-
-pub fn format_ref_name(name: &str) -> String {
-    match name.starts_with("refs/heads/") {
-        true => name.to_string(),
-        false => format!("refs/heads/{}", name),
-    }
-}
-
-pub fn get_ref(name: &str) -> Result<String, Error> {
-    let ref_name = format_ref_name(name);
+pub fn read_ref(name: &str) -> io::Result<String> {
+    let ref_name = full_ref_name(name);
     let ref_path = Path::new(".git").join(ref_name);
-    let mut val = fs::read_to_string(ref_path).map_err(Error::IoError)?;
+
+    let mut value = fs::read_to_string(ref_path)?;
     // Remove '\n' character
-    val.pop();
-    Ok(val)
+    value.pop();
+
+    let head_prefix = "ref: refs/heads/";
+    if value.starts_with(&head_prefix) {
+        value = value.split_off(head_prefix.len());
+    }
+
+    Ok(value)
 }
 
-pub fn write_ref(name: &str, value: &str) -> Result<(), Error> {
-    let ref_name = format_ref_name(name);
+pub fn get_ref_hash(name: &str) -> io::Result<String> {
+    let value = read_ref(name)?;
+    if name == "HEAD" && is_branch(&value) {
+        return read_ref(&value);
+    }
+
+    Ok(value)
+}
+
+pub fn write_to_ref(name: &str, value: &str) -> io::Result<()> {
+    let ref_name = full_ref_name(name);
     let ref_path = Path::new(".git").join(ref_name);
-    fs::write(ref_path, format!("{}\n", value)).map_err(Error::IoError)?;
+
+    let prefix = match name == "HEAD" && is_branch(&value) {
+        true => "ref: refs/heads/",
+        false => "",
+    };
+    let formated_value = format!("{}{}\n", prefix, value);
+
+    fs::write(ref_path, formated_value)?;
     Ok(())
 }
 
 pub fn exists_ref(name: &str) -> bool {
-    let ref_name = format_ref_name(name);
-    Path::new(".git").join(ref_name).exists()
+    let ref_name = full_ref_name(name);
+    Path::new(".git").join(ref_name).exists() || is_detached_head()
 }
 
-pub fn head_ref() -> Result<String, Error> {
-    let head_path = Path::new(".git").join("HEAD");
-    let mut head = fs::read_to_string(head_path).map_err(Error::IoError)?;
-    // Remove '\n' character
-    head.pop();
-
-    if head.starts_with("ref: refs/heads/") {
-        let branch = match head.get(16..) {
-            Some(b) => b.to_string(),
-            None => return Err(Error::InvalidHEADFile),
-        };
-        return Ok(branch);
-    } else {
-        return Ok(head);
-    }
+pub fn is_branch(name: &str) -> bool {
+    Path::new(".git")
+        .join("refs")
+        .join("heads")
+        .join(&name)
+        .exists()
 }
 
 pub fn is_detached_head() -> bool {
@@ -59,5 +60,13 @@ pub fn is_detached_head() -> bool {
         Ok(s) => s,
         Err(_) => return false,
     };
-    !head.starts_with("ref: ")
+    !head.starts_with("ref: refs/heads/")
+}
+
+fn full_ref_name(name: &str) -> String {
+    if name == "HEAD" || name.starts_with("refs/heads/") {
+        name.to_string()
+    } else {
+        format!("refs/heads/{}", name)
+    }
 }

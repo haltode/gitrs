@@ -1,6 +1,5 @@
 use std::fs;
 use std::io;
-use std::path::Path;
 use std::str;
 
 use builtin::read_tree;
@@ -14,7 +13,7 @@ pub enum Error {
     IndexError(index::Error),
     IoError(io::Error),
     ObjectError(object::Error),
-    RefError(refs::Error),
+    RefError(io::Error),
     ReferenceNotACommit,
     TreeError(read_tree::Error),
     Utf8Error(str::Utf8Error),
@@ -32,39 +31,33 @@ pub fn cmd_checkout(args: &[String]) {
 }
 
 fn checkout(ref_name: &str) -> Result<(), Error> {
-    let cur_commit = match refs::get_ref(&ref_name) {
-        Ok(r) => r,
-        Err(_) => ref_name.to_string(),
+    let will_detach_head = !refs::is_branch(&ref_name);
+    let commit = match will_detach_head {
+        true => ref_name.to_string(),
+        false => refs::get_ref_hash(&ref_name).map_err(Error::RefError)?,
     };
-    let is_detached_head = cur_commit == ref_name;
 
-    let object = object::get_object(&cur_commit).map_err(Error::ObjectError)?;
+    let object = object::get_object(&commit).map_err(Error::ObjectError)?;
     if object.obj_type != "commit" {
         return Err(Error::ReferenceNotACommit);
     }
 
-    let head = refs::head_ref().map_err(Error::RefError)?;
+    let head = refs::get_ref_hash("HEAD").map_err(Error::RefError)?;
     if ref_name == head {
         return Err(Error::AlreadyOnIt);
     }
 
-    let tree = object::get_tree_from_commit(&cur_commit).map_err(Error::ObjectError)?;
+    let tree = object::get_tree_from_commit(&commit).map_err(Error::ObjectError)?;
     update_working_dir(ref_name, &tree)?;
 
-    let head_dir = Path::new(".git").join("HEAD");
-    if is_detached_head {
-        fs::write(head_dir, format!("{}\n", ref_name)).map_err(Error::IoError)?;
-    } else {
-        let full_ref = refs::format_ref_name(&ref_name);
-        fs::write(head_dir, format!("ref: {}\n", full_ref)).map_err(Error::IoError)?;
-    }
-
-    if is_detached_head {
+    refs::write_to_ref("HEAD", ref_name).map_err(Error::RefError)?;
+    if will_detach_head {
         println!("Note: checking out {}", ref_name);
         println!("You are in detached HEAD state.");
     } else {
         println!("Switched to branch {}", ref_name);
     }
+
     Ok(())
 }
 

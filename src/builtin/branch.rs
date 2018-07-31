@@ -8,7 +8,7 @@ use refs;
 #[derive(Debug)]
 pub enum Error {
     IoError(io::Error),
-    RefError(refs::Error),
+    RefError(io::Error),
 }
 
 pub fn cmd_branch(args: &[String], flags: &[String]) {
@@ -24,8 +24,8 @@ pub fn cmd_branch(args: &[String], flags: &[String]) {
 }
 
 fn branch(name: &str, flag: &str) -> Result<(), Error> {
-    let cur_branch = refs::head_ref().map_err(Error::RefError)?;
-    let cur_hash = refs::get_ref(&cur_branch).map_err(Error::RefError)?;
+    let cur_branch = refs::read_ref("HEAD").map_err(Error::RefError)?;
+    let cur_hash = refs::get_ref_hash("HEAD").map_err(Error::RefError)?;
 
     if flag == "--list" || flag == "-l" || name.is_empty() {
         let refs_dir = Path::new(".git").join("refs").join("heads");
@@ -50,7 +50,7 @@ fn branch(name: &str, flag: &str) -> Result<(), Error> {
             }
         }
     } else if !name.is_empty() {
-        refs::write_ref(name, &cur_hash).map_err(Error::RefError)?;
+        refs::write_to_ref(name, &cur_hash).map_err(Error::RefError)?;
     }
 
     Ok(())

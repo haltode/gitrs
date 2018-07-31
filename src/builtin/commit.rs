@@ -19,7 +19,7 @@ pub enum Error {
     IoError(io::Error),
     NothingToCommit,
     ObjectError(object::Error),
-    RefError(refs::Error),
+    RefError(io::Error),
     TimeError(time::SystemTimeError),
     TreeError(write_tree::Error),
 }
@@ -50,9 +50,9 @@ fn commit(message: &str) -> Result<String, Error> {
 
     let tree = write_tree::write_tree().map_err(Error::TreeError)?;
     let mut header = format!("tree {}", tree);
-    let cur_branch = refs::head_ref().map_err(Error::RefError)?;
+    let cur_branch = refs::read_ref("HEAD").map_err(Error::RefError)?;
     if refs::exists_ref(&cur_branch) || refs::is_detached_head() {
-        let cur_commit = match refs::get_ref(&cur_branch) {
+        let cur_commit = match refs::get_ref_hash(&cur_branch) {
             Ok(r) => r,
             Err(_) => cur_branch.to_string(),
         };
