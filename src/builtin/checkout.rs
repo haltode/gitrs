@@ -3,6 +3,7 @@ use std::io;
 use std::str;
 
 use builtin::read_tree;
+use builtin::status;
 use index;
 use object;
 use refs;
@@ -17,6 +18,7 @@ pub enum Error {
     ReferenceNotACommit,
     TreeError(read_tree::Error),
     Utf8Error(str::Utf8Error),
+    WorkingDirNotClean,
 }
 
 pub fn cmd_checkout(args: &[String]) {
@@ -31,6 +33,10 @@ pub fn cmd_checkout(args: &[String]) {
 }
 
 fn checkout(ref_name: &str) -> Result<(), Error> {
+    if !status::is_clean_working_dir() {
+        return Err(Error::WorkingDirNotClean);
+    }
+
     let will_detach_head = !refs::is_branch(&ref_name);
     let commit = match will_detach_head {
         true => ref_name.to_string(),

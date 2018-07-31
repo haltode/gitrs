@@ -13,13 +13,30 @@ pub enum Error {
     IoError(io::Error),
 }
 
-pub fn cmd_status() {
-    if let Err(why) = status() {
-        println!("Could not retrieve status: {:?}", why);
-    }
+enum State {
+    Modified,
+    New,
+    Deleted,
 }
 
-fn status() -> Result<(), Error> {
+pub fn cmd_status() {
+    match status() {
+        Ok(changes) => {
+            for (state, path) in changes {
+                let s = match state {
+                    State::Modified => "modified",
+                    State::New => "new",
+                    State::Deleted => "deleted",
+                };
+                println!("{}: {}", s, path);
+            }
+        }
+        Err(why) => println!("Could not retrieve status: {:?}", why),
+    };
+}
+
+fn status() -> Result<Vec<(State, String)>, Error> {
+    let mut status = Vec::new();
     let index = index::read_entries().map_err(Error::IndexError)?;
     let files = get_all_files_path()?;
     for file in &files {
@@ -29,20 +46,20 @@ fn status() -> Result<(), Error> {
                 let hash = hash_object::hash_object(&file_content, "blob", false)
                     .map_err(Error::HashObjError)?;
                 if e.hash != hash {
-                    println!("modified: {}", file);
+                    status.push((State::Modified, file.to_string()));
                 }
             }
-            None => println!("new: {}", file),
+            None => status.push((State::New, file.to_string())),
         };
     }
 
     for entry in &index {
         if files.iter().all(|x| x != &entry.path) {
-            println!("deleted: {}", entry.path);
+            status.push((State::Deleted, entry.path.to_string()));
         }
     }
 
-    Ok(())
+    Ok(status)
 }
 
 fn get_all_files_path() -> Result<Vec<String>, Error> {
@@ -77,4 +94,11 @@ fn get_all_files_path() -> Result<Vec<String>, Error> {
     }
 
     Ok(files)
+}
+
+pub fn is_clean_working_dir() -> bool {
+    match status() {
+        Ok(changes) => changes.is_empty(),
+        Err(_) => false,
+    }
 }
