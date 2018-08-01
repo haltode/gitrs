@@ -58,7 +58,7 @@ pub fn hash_object(data: &[u8], obj_type: &str, write: bool) -> io::Result<Strin
 
 #[cfg(test)]
 mod tests {
-    use hash_object::hash_object;
+    use builtin::hash_object::hash_object;
 
     #[test]
     fn short() {
