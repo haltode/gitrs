@@ -63,7 +63,7 @@ pub fn commit(message: &str) -> Result<String, Error> {
         };
         header.push_str(&format!("\nparent {}", cur_commit));
 
-        let cur_hash = get_tree(&cur_commit)?;
+        let cur_hash = get_tree_hash(&cur_commit)?;
         if tree == cur_hash {
             println!("On {}", cur_branch);
             println!("nothing to commit, working tree clean");
@@ -102,8 +102,8 @@ pub fn commit(message: &str) -> Result<String, Error> {
     Ok(hash)
 }
 
-pub fn get_tree(hash: &str) -> Result<String, Error> {
-    let object = Object::new(&hash).map_err(Error::ObjectError)?;
+pub fn get_tree_hash(commit: &str) -> Result<String, Error> {
+    let object = Object::new(&commit).map_err(Error::ObjectError)?;
     let data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
     if !data.starts_with("tree ") || data.len() < 45 {
         return Err(Error::InvalidTree);
@@ -112,8 +112,8 @@ pub fn get_tree(hash: &str) -> Result<String, Error> {
     Ok(tree)
 }
 
-pub fn get_parent(hash: &str) -> Result<String, Error> {
-    let object = Object::new(&hash).map_err(Error::ObjectError)?;
+pub fn get_parent_hash(commit: &str) -> Result<String, Error> {
+    let object = Object::new(&commit).map_err(Error::ObjectError)?;
     let data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
     let data = match data.get(46..) {
         Some(d) => d,
@@ -136,7 +136,7 @@ fn get_ancestors(hash: &str) -> Result<Vec<String>, Error> {
     let mut ancestors = Vec::new();
     let mut cur_commit = hash.to_string();
     while !cur_commit.is_empty() {
-        cur_commit = get_parent(&cur_commit)?;
+        cur_commit = get_parent_hash(&cur_commit)?;
         ancestors.push(cur_commit.clone());
     }
 
