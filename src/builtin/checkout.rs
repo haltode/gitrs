@@ -69,7 +69,7 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
     Ok(())
 }
 
-fn update_working_dir(ref_name: &str, tree_hash: &str) -> Result<(), Error> {
+pub fn update_working_dir(ref_name: &str, tree_hash: &str) -> Result<(), Error> {
     let mut new_index = Vec::new();
     let tree = read_tree::read_tree(tree_hash).map_err(Error::TreeError)?;
     let index = index::read_entries().map_err(Error::IndexError)?;

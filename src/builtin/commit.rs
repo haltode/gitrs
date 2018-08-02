@@ -129,3 +129,23 @@ pub fn get_parent(hash: &str) -> Result<String, Error> {
     };
     Ok(parent)
 }
+
+fn get_ancestors(hash: &str) -> Result<Vec<String>, Error> {
+    let mut ancestors = Vec::new();
+    let mut cur_commit = hash.to_string();
+    while !cur_commit.is_empty() {
+        cur_commit = get_parent(&cur_commit)?;
+        ancestors.push(cur_commit.clone());
+    }
+
+    Ok(ancestors)
+}
+
+pub fn is_ancestor(commit1: &str, commit2: &str) -> bool {
+    let commit1_ancestors = match get_ancestors(&commit1) {
+        Ok(a) => a,
+        Err(_) => return false,
+    };
+
+    commit1_ancestors.contains(&commit2.to_string())
+}

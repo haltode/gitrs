@@ -9,6 +9,7 @@ pub mod hash_object;
 pub mod init;
 pub mod log;
 pub mod ls_files;
+pub mod merge;
 pub mod read_tree;
 pub mod status;
 pub mod write_tree;

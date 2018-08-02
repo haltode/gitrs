@@ -40,6 +40,7 @@ fn main() {
         "log" => builtin::log::cmd_log(),
         "branch" => builtin::branch::cmd_branch(&args, &flags),
         "checkout" => builtin::checkout::cmd_checkout(&args),
+        "merge" => builtin::merge::cmd_merge(&args),
         "help" | _ => print_help(),
     }
 }
