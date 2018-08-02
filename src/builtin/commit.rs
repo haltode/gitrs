@@ -19,6 +19,7 @@ pub enum Error {
     HashObjError(io::Error),
     InvalidTree,
     IoError(io::Error),
+    NoCommonAncestor,
     NothingToCommit,
     ObjectError(object::Error),
     RefError(io::Error),
@@ -41,7 +42,7 @@ pub fn cmd_commit(args: &[String], flags: &[String]) {
     }
 }
 
-fn commit(message: &str) -> Result<String, Error> {
+pub fn commit(message: &str) -> Result<String, Error> {
     let user = config::parse_config().map_err(Error::ConfigError)?;
     if user.name.is_empty() || user.email.is_empty() {
         println!("Need to specify your name/email before committing:");
@@ -148,4 +149,17 @@ pub fn is_ancestor(commit1: &str, commit2: &str) -> bool {
     };
 
     commit1_ancestors.contains(&commit2.to_string())
+}
+
+pub fn lowest_common_ancestor(commit1: &str, commit2: &str) -> Result<String, Error> {
+    let commit1_ancestors = get_ancestors(&commit1)?;
+    let commit2_ancestors = get_ancestors(&commit2)?;
+
+    for ancestor in commit1_ancestors {
+        if commit2_ancestors.contains(&ancestor) {
+            return Ok(ancestor);
+        }
+    }
+
+    Err(Error::NoCommonAncestor)
 }

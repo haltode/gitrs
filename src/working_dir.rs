@@ -98,6 +98,58 @@ pub fn update_from_commit(commit: &str) -> Result<(), Error> {
     Ok(())
 }
 
+pub fn update_from_merge(commit1: &str, commit2: &str) -> Result<(), Error> {
+    let common_ancestor =
+        commit::lowest_common_ancestor(&commit1, &commit2).map_err(Error::CommitError)?;
+    let changes1 = diff_from_commit(&common_ancestor, &commit1)?;
+    let changes2 = diff_from_commit(&common_ancestor, &commit2)?;
+
+    let mut new_index = Vec::new();
+    for change in &changes1 {
+        match changes2.iter().find(|c| c.path == change.path) {
+            Some(c) => {
+                let obj1 = object::get_object(&change.hash).map_err(Error::ObjectError)?;
+                let obj2 = object::get_object(&c.hash).map_err(Error::ObjectError)?;
+                if obj1.data != obj2.data {
+                    // Merge conflict (no merge at all or intelligent conflict
+                    // marker, just mark everything as conflict)
+                    let content1 = str::from_utf8(&obj1.data).map_err(Error::Utf8Error)?;
+                    let content2 = str::from_utf8(&obj2.data).map_err(Error::Utf8Error)?;
+                    let conflict = format!(
+                        "<<<<<< {}\n{}\n======\n{}\n>>>>>> {}",
+                        commit1, content1, content2, commit2
+                    );
+                    fs::write(&change.path, conflict).map_err(Error::IoError)?;
+                }
+
+                let entry = index::Entry::new(&change.path).map_err(Error::IndexError)?;
+                new_index.push(entry);
+            }
+            None => {
+                update_single_change(&change)?;
+                if change.state != State::Deleted {
+                    let entry = index::Entry::new(&change.path).map_err(Error::IndexError)?;
+                    new_index.push(entry);
+                }
+            }
+        }
+    }
+
+    for change in &changes2 {
+        let not_seen = changes1.iter().all(|c| c.path != change.path);
+        if not_seen {
+            update_single_change(&change)?;
+            if change.state != State::Deleted {
+                let entry = index::Entry::new(&change.path).map_err(Error::IndexError)?;
+                new_index.push(entry);
+            }
+        }
+    }
+
+    index::write_entries(new_index).map_err(Error::IndexError)?;
+    Ok(())
+}
+
 fn update_single_change(change: &Change) -> Result<(), Error> {
     match change.state {
         State::New | State::Modified | State::Same => {
