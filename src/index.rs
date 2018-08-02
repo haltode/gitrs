@@ -138,7 +138,9 @@ pub fn read_entries() -> Result<Vec<Entry>, Error> {
     Ok(entries)
 }
 
-pub fn write_entries(entries: Vec<Entry>) -> Result<(), Error> {
+pub fn write_entries(mut entries: Vec<Entry>) -> Result<(), Error> {
+    entries.sort_by(|a, b| a.path.cmp(&b.path));
+
     let mut compressed_entries = Vec::new();
     for entry in &entries {
         let fields = vec![

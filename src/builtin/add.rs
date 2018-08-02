@@ -15,7 +15,6 @@ fn add(paths: &[String]) -> Result<(), index::Error> {
         entries.push(entry);
     }
 
-    entries.sort_by(|a, b| a.path.cmp(&b.path));
     index::write_entries(entries)?;
     Ok(())
 }
