@@ -1,0 +1,9 @@
+#!/bin/sh
+
+gitrs="cargo run"
+
+./branch
+cd repo
+
+$gitrs checkout master
+$gitrs merge new_b
