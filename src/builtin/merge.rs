@@ -2,11 +2,11 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use builtin::checkout;
 use builtin::commit;
 use builtin::status;
 use object;
 use refs;
+use working_dir;
 
 #[derive(Debug)]
 pub enum Error {
@@ -15,8 +15,7 @@ pub enum Error {
     ObjectError(object::Error),
     RefError(io::Error),
     ReferenceNotACommit,
-    TreeCommitError(commit::Error),
-    UpdateDirError(checkout::Error),
+    WorkingDirError(working_dir::Error),
     WorkingDirNotClean,
 }
 
@@ -47,17 +46,17 @@ fn merge(ref_name: &str) -> Result<(), Error> {
         return Err(Error::ReferenceNotACommit);
     }
 
+    let cur_branch = refs::read_ref("HEAD").map_err(Error::RefError)?;
     let can_fast_forward = commit::is_ancestor(&dst_commit, &cur_commit);
     if can_fast_forward {
-        let tree = commit::get_tree(&dst_commit).map_err(Error::TreeCommitError)?;
-        checkout::update_working_dir(&dst_commit, &tree).map_err(Error::UpdateDirError)?;
+        working_dir::update_from_commit(&dst_commit).map_err(Error::WorkingDirError)?;
 
-        let cur_branch = refs::read_ref("HEAD").map_err(Error::RefError)?;
         let branch_path = Path::new(".git")
             .join("refs")
             .join("heads")
             .join(&cur_branch);
         fs::write(branch_path, format!("{}\n", dst_commit)).map_err(Error::IoError)?;
+        println!("Fast-forward");
     } else {
 
     }

@@ -1,25 +1,18 @@
-use std::fs;
 use std::io;
 use std::str;
 
-use builtin::commit;
-use builtin::read_tree;
 use builtin::status;
-use index;
 use object;
 use refs;
+use working_dir;
 
 #[derive(Debug)]
 pub enum Error {
     AlreadyOnIt,
-    CommitError(commit::Error),
-    IndexError(index::Error),
-    IoError(io::Error),
     ObjectError(object::Error),
     RefError(io::Error),
     ReferenceNotACommit,
-    TreeError(read_tree::Error),
-    Utf8Error(str::Utf8Error),
+    WorkingDirError(working_dir::Error),
     WorkingDirNotClean,
 }
 
@@ -55,10 +48,9 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
         return Err(Error::AlreadyOnIt);
     }
 
-    let tree = commit::get_tree(&commit).map_err(Error::CommitError)?;
-    update_working_dir(ref_name, &tree)?;
-
+    working_dir::update_from_commit(&commit).map_err(Error::WorkingDirError)?;
     refs::write_to_ref("HEAD", ref_name).map_err(Error::RefError)?;
+
     if will_detach_head {
         println!("Note: checking out {}", ref_name);
         println!("You are in detached HEAD state.");
@@ -66,50 +58,5 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
         println!("Switched to branch {}", ref_name);
     }
 
-    Ok(())
-}
-
-pub fn update_working_dir(ref_name: &str, tree_hash: &str) -> Result<(), Error> {
-    let mut new_index = Vec::new();
-    let tree = read_tree::read_tree(tree_hash).map_err(Error::TreeError)?;
-    let index = index::read_entries().map_err(Error::IndexError)?;
-
-    // Check for addition and modification
-    for entry in &tree {
-        let blob = object::get_object(&entry.hash).map_err(Error::ObjectError)?;
-        match index.iter().find(|e| entry.path == e.path) {
-            // Modif (no merge at all or intelligent conflict marker, just mark everything as conflict)
-            Some(e) => {
-                let blob_data = str::from_utf8(&blob.data).map_err(Error::Utf8Error)?;
-                let head_data = fs::read_to_string(&entry.path).map_err(Error::IoError)?;
-                if head_data != blob_data {
-                    let conflict = format!(
-                        "<<<<<< HEAD\n{}======\n{}>>>>>> {}\n",
-                        head_data, blob_data, ref_name
-                    );
-                    fs::write(&entry.path, conflict).map_err(Error::IoError)?;
-                }
-
-                new_index.push(e.clone());
-            }
-
-            // Add
-            None => {
-                fs::write(&entry.path, blob.data).map_err(Error::IoError)?;
-                let new_entry = index::Entry::new(&entry.path).map_err(Error::IndexError)?;
-                new_index.push(new_entry);
-            }
-        };
-    }
-
-    // Check for deletion
-    for entry in &index {
-        let in_tree = tree.iter().any(|e| e.path == entry.path);
-        if !in_tree {
-            fs::remove_file(&entry.path).map_err(Error::IoError)?;
-        }
-    }
-
-    index::write_entries(new_index).map_err(Error::IndexError)?;
     Ok(())
 }
