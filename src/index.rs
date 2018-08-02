@@ -14,13 +14,17 @@ use sha1;
 #[derive(Debug)]
 pub enum Error {
     EntryMissingNullByteEnding,
-    HashObjError(io::Error),
     InvalidChecksum,
     InvalidHash,
     InvalidHeaderSignature,
     InvalidIndexVersion,
     IoError(io::Error),
-    Utf8Error(str::Utf8Error),
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Error {
+        Error::IoError(e)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -42,11 +46,11 @@ pub struct Entry {
 
 impl Entry {
     pub fn new(path: &str) -> Result<Entry, Error> {
-        let data = fs::read(&path).map_err(Error::IoError)?;
-        let meta = fs::metadata(&path).map_err(Error::IoError)?;
+        let data = fs::read(&path)?;
+        let meta = fs::metadata(&path)?;
 
         let write = true;
-        let hash = hash_object::hash_object(&data, "blob", write).map_err(Error::HashObjError)?;
+        let hash = hash_object::hash_object(&data, "blob", write)?;
 
         Ok(Entry {
             ctime_sec: meta.ctime() as u32,
@@ -74,8 +78,8 @@ pub fn read_entries() -> Result<Vec<Entry>, Error> {
         return Ok(entries);
     }
 
-    let bytes = fs::read(index).map_err(Error::IoError)?;
-    let signature = str::from_utf8(&bytes[0..4]).map_err(Error::Utf8Error)?;
+    let bytes = fs::read(index)?;
+    let signature = str::from_utf8(&bytes[0..4]).expect("invalid utf-8");
     if signature != "DIRC" {
         return Err(Error::InvalidHeaderSignature);
     }
@@ -104,7 +108,7 @@ pub fn read_entries() -> Result<Vec<Entry>, Error> {
             None => return Err(Error::EntryMissingNullByteEnding),
         };
         let path = str::from_utf8(&bytes[idx..idx + null_idx])
-            .map_err(Error::Utf8Error)?
+            .expect("invalid utf-8")
             .to_string();
         idx += null_idx;
 
@@ -193,7 +197,7 @@ pub fn write_entries(mut entries: Vec<Entry>) -> Result<(), Error> {
     data.extend(&compressed_hash);
 
     let index = Path::new(".git").join("index");
-    fs::write(index, &data).map_err(Error::IoError)?;
+    fs::write(index, &data)?;
 
     Ok(())
 }
