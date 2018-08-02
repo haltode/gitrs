@@ -12,6 +12,41 @@ use object::Object;
 use refs;
 
 #[derive(Debug)]
+pub enum Error {
+    CommitError(commit::Error),
+    IndexError(index::Error),
+    IoError(io::Error),
+    ObjectError(object::Error),
+    ReadTreeError(read_tree::Error),
+}
+
+impl From<commit::Error> for Error {
+    fn from(e: commit::Error) -> Error {
+        Error::CommitError(e)
+    }
+}
+impl From<index::Error> for Error {
+    fn from(e: index::Error) -> Error {
+        Error::IndexError(e)
+    }
+}
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Error {
+        Error::IoError(e)
+    }
+}
+impl From<object::Error> for Error {
+    fn from(e: object::Error) -> Error {
+        Error::ObjectError(e)
+    }
+}
+impl From<read_tree::Error> for Error {
+    fn from(e: read_tree::Error) -> Error {
+        Error::ReadTreeError(e)
+    }
+}
+
+#[derive(Debug)]
 pub struct Change {
     pub state: State,
     pub path: String,
@@ -26,29 +61,18 @@ pub enum State {
     Same,
 }
 
-#[derive(Debug)]
-pub enum Error {
-    CommitError(commit::Error),
-    IndexError(index::Error),
-    IoError(io::Error),
-    ObjectError(object::Error),
-    ReadTreeError(read_tree::Error),
-    RefError(io::Error),
-    Utf8Error(str::Utf8Error),
-}
-
 pub fn diff_from_commit(oldest: &str, latest: &str) -> Result<Vec<Change>, Error> {
-    let tree_hash = commit::get_tree(&oldest).map_err(Error::CommitError)?;
-    let oldest_tree = read_tree::read_tree(&tree_hash).map_err(Error::ReadTreeError)?;
-    let tree_hash = commit::get_tree(&latest).map_err(Error::CommitError)?;
-    let latest_tree = read_tree::read_tree(&tree_hash).map_err(Error::ReadTreeError)?;
+    let tree_hash = commit::get_tree_hash(&oldest)?;
+    let oldest_tree = read_tree::read_tree(&tree_hash)?;
+    let tree_hash = commit::get_tree_hash(&latest)?;
+    let latest_tree = read_tree::read_tree(&tree_hash)?;
 
     let mut changes = Vec::new();
     for entry in &latest_tree {
         match oldest_tree.iter().find(|e| entry.path == e.path) {
             Some(e) => {
-                let oldest_obj = Object::new(&e.hash).map_err(Error::ObjectError)?;
-                let latest_obj = Object::new(&entry.hash).map_err(Error::ObjectError)?;
+                let oldest_obj = Object::new(&e.hash)?;
+                let latest_obj = Object::new(&entry.hash)?;
                 let state = match oldest_obj.data != latest_obj.data {
                     true => State::Modified,
                     false => State::Same,
@@ -83,25 +107,24 @@ pub fn diff_from_commit(oldest: &str, latest: &str) -> Result<Vec<Change>, Error
 }
 
 pub fn update_from_commit(commit: &str) -> Result<(), Error> {
-    let cur_commit = refs::get_ref_hash("HEAD").map_err(Error::RefError)?;
+    let cur_commit = refs::get_ref_hash("HEAD")?;
     let changes = diff_from_commit(&cur_commit, &commit)?;
 
     let mut new_index = Vec::new();
     for change in changes {
         update_single_change(&change)?;
         if change.state != State::Deleted {
-            let entry = index::Entry::new(&change.path).map_err(Error::IndexError)?;
+            let entry = index::Entry::new(&change.path)?;
             new_index.push(entry);
         }
     }
 
-    index::write_entries(new_index).map_err(Error::IndexError)?;
+    index::write_entries(new_index)?;
     Ok(())
 }
 
 pub fn update_from_merge(commit1: &str, commit2: &str) -> Result<(), Error> {
-    let common_ancestor =
-        commit::lowest_common_ancestor(&commit1, &commit2).map_err(Error::CommitError)?;
+    let common_ancestor = commit::lowest_common_ancestor(&commit1, &commit2)?;
     let changes1 = diff_from_commit(&common_ancestor, &commit1)?;
     let changes2 = diff_from_commit(&common_ancestor, &commit2)?;
 
@@ -109,27 +132,27 @@ pub fn update_from_merge(commit1: &str, commit2: &str) -> Result<(), Error> {
     for change in &changes1 {
         match changes2.iter().find(|c| c.path == change.path) {
             Some(c) => {
-                let obj1 = Object::new(&change.hash).map_err(Error::ObjectError)?;
-                let obj2 = Object::new(&c.hash).map_err(Error::ObjectError)?;
+                let obj1 = Object::new(&change.hash)?;
+                let obj2 = Object::new(&c.hash)?;
                 if obj1.data != obj2.data {
                     // Merge conflict (no merge at all or intelligent conflict
                     // marker, just mark everything as conflict)
-                    let content1 = str::from_utf8(&obj1.data).map_err(Error::Utf8Error)?;
-                    let content2 = str::from_utf8(&obj2.data).map_err(Error::Utf8Error)?;
+                    let content1 = str::from_utf8(&obj1.data).unwrap();
+                    let content2 = str::from_utf8(&obj2.data).unwrap();
                     let conflict = format!(
                         "<<<<<< {}\n{}\n======\n{}\n>>>>>> {}",
                         commit1, content1, content2, commit2
                     );
-                    fs::write(&change.path, conflict).map_err(Error::IoError)?;
+                    fs::write(&change.path, conflict)?;
                 }
 
-                let entry = index::Entry::new(&change.path).map_err(Error::IndexError)?;
+                let entry = index::Entry::new(&change.path)?;
                 new_index.push(entry);
             }
             None => {
                 update_single_change(&change)?;
                 if change.state != State::Deleted {
-                    let entry = index::Entry::new(&change.path).map_err(Error::IndexError)?;
+                    let entry = index::Entry::new(&change.path)?;
                     new_index.push(entry);
                 }
             }
@@ -141,23 +164,23 @@ pub fn update_from_merge(commit1: &str, commit2: &str) -> Result<(), Error> {
         if not_seen {
             update_single_change(&change)?;
             if change.state != State::Deleted {
-                let entry = index::Entry::new(&change.path).map_err(Error::IndexError)?;
+                let entry = index::Entry::new(&change.path)?;
                 new_index.push(entry);
             }
         }
     }
 
-    index::write_entries(new_index).map_err(Error::IndexError)?;
+    index::write_entries(new_index)?;
     Ok(())
 }
 
 fn update_single_change(change: &Change) -> Result<(), Error> {
     match change.state {
         State::New | State::Modified | State::Same => {
-            let blob = Object::new(&change.hash).map_err(Error::ObjectError)?;
-            fs::write(&change.path, blob.data).map_err(Error::IoError)?;
+            let blob = Object::new(&change.hash)?;
+            fs::write(&change.path, blob.data)?;
         }
-        State::Deleted => fs::remove_file(&change.path).map_err(Error::IoError)?,
+        State::Deleted => fs::remove_file(&change.path)?,
     }
 
     Ok(())

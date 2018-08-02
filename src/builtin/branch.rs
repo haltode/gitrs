@@ -5,12 +5,6 @@ use std::path::Path;
 use cli;
 use refs;
 
-#[derive(Debug)]
-pub enum Error {
-    IoError(io::Error),
-    RefError(io::Error),
-}
-
 pub fn cmd_branch(args: &[String], flags: &[String]) {
     let accepted_flags = ["--list", "-l"];
     if cli::has_known_flags(flags, &accepted_flags) {
@@ -23,14 +17,14 @@ pub fn cmd_branch(args: &[String], flags: &[String]) {
     }
 }
 
-fn branch(name: &str, flag: &str) -> Result<(), Error> {
-    let cur_branch = refs::read_ref("HEAD").map_err(Error::RefError)?;
-    let cur_hash = refs::get_ref_hash("HEAD").map_err(Error::RefError)?;
+fn branch(name: &str, flag: &str) -> io::Result<()> {
+    let cur_branch = refs::read_ref("HEAD")?;
+    let cur_hash = refs::get_ref_hash("HEAD")?;
 
     if flag == "--list" || flag == "-l" || name.is_empty() {
         let refs_dir = Path::new(".git").join("refs").join("heads");
-        for entry in fs::read_dir(refs_dir).map_err(Error::IoError)? {
-            let path = entry.map_err(Error::IoError)?.path();
+        for entry in fs::read_dir(refs_dir)? {
+            let path = entry?.path();
             if path.is_dir() {
                 continue;
             }
@@ -50,7 +44,7 @@ fn branch(name: &str, flag: &str) -> Result<(), Error> {
             }
         }
     } else if !name.is_empty() {
-        refs::write_to_ref(name, &cur_hash).map_err(Error::RefError)?;
+        refs::write_to_ref(name, &cur_hash)?;
     }
 
     Ok(())

@@ -10,11 +10,17 @@ use working_dir;
 #[derive(Debug)]
 pub enum Error {
     AlreadyOnIt,
+    IoError(io::Error),
     ObjectError(object::Error),
-    RefError(io::Error),
     ReferenceNotACommit,
     WorkingDirError(working_dir::Error),
     WorkingDirNotClean,
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Error {
+        Error::IoError(e)
+    }
 }
 
 pub fn cmd_checkout(args: &[String]) {
@@ -36,7 +42,7 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
     let will_detach_head = !refs::is_branch(&ref_name);
     let commit = match will_detach_head {
         true => ref_name.to_string(),
-        false => refs::get_ref_hash(&ref_name).map_err(Error::RefError)?,
+        false => refs::get_ref_hash(&ref_name)?,
     };
 
     let object = Object::new(&commit).map_err(Error::ObjectError)?;
@@ -44,13 +50,13 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
         return Err(Error::ReferenceNotACommit);
     }
 
-    let head = refs::get_ref_hash("HEAD").map_err(Error::RefError)?;
+    let head = refs::get_ref_hash("HEAD")?;
     if ref_name == head {
         return Err(Error::AlreadyOnIt);
     }
 
     working_dir::update_from_commit(&commit).map_err(Error::WorkingDirError)?;
-    refs::write_to_ref("HEAD", ref_name).map_err(Error::RefError)?;
+    refs::write_to_ref("HEAD", ref_name)?;
 
     if will_detach_head {
         println!("Note: checking out {}", ref_name);

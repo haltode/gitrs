@@ -19,7 +19,6 @@ pub enum Error {
     IndexError(index::Error),
     IoError(io::Error),
     ObjectError(object::Error),
-    Utf8Error(str::Utf8Error),
 }
 
 enum State {
@@ -47,7 +46,7 @@ fn diff(paths: &[String]) -> Result<(), Error> {
             continue;
         }
 
-        let stored_data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
+        let stored_data = str::from_utf8(&object.data).unwrap();
         let actual_data = fs::read_to_string(path).map_err(Error::IoError)?;
 
         let stored_lines: Vec<&str> = stored_data.split("\n").collect();

@@ -9,7 +9,6 @@ use object::Object;
 pub enum Error {
     ObjectError(object::Error),
     TreeError(read_tree::Error),
-    Utf8Error(str::Utf8Error),
 }
 
 pub fn cmd_cat_file(args: &[String], flags: &[String]) {
@@ -34,7 +33,7 @@ pub fn cat_file(hash_prefix: &str, mode: &str) -> Result<(), Error> {
         "--size" | "-s" => println!("{}", object.obj_size),
         "--print" | "-p" => match object.obj_type.as_str() {
             "blob" | "commit" => {
-                let data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
+                let data = str::from_utf8(&object.data).unwrap();
                 println!("{}", data);
             }
             "tree" => {

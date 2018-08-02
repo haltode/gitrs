@@ -4,6 +4,7 @@ use std::path::Path;
 
 use cli;
 
+#[derive(Debug)]
 pub struct Config {
     pub name: String,
     pub email: String,

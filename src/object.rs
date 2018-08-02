@@ -47,7 +47,7 @@ impl Object {
         // 32 = space character (ASCII)
         let mut iter = header.split(|&x| x == 32);
         let obj_type = match iter.next() {
-            Some(tp) => str::from_utf8(&tp).expect("invalid utf-8").to_string(),
+            Some(tp) => str::from_utf8(&tp).unwrap().to_string(),
             None => return Err(Error::HeaderMissingType),
         };
         let obj_size = match iter.next() {

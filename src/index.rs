@@ -79,7 +79,7 @@ pub fn read_entries() -> Result<Vec<Entry>, Error> {
     }
 
     let bytes = fs::read(index)?;
-    let signature = str::from_utf8(&bytes[0..4]).expect("invalid utf-8");
+    let signature = str::from_utf8(&bytes[0..4]).unwrap();
     if signature != "DIRC" {
         return Err(Error::InvalidHeaderSignature);
     }
@@ -108,7 +108,7 @@ pub fn read_entries() -> Result<Vec<Entry>, Error> {
             None => return Err(Error::EntryMissingNullByteEnding),
         };
         let path = str::from_utf8(&bytes[idx..idx + null_idx])
-            .expect("invalid utf-8")
+            .unwrap()
             .to_string();
         idx += null_idx;
 

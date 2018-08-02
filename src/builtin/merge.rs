@@ -15,10 +15,21 @@ pub enum Error {
     CommitError(commit::Error),
     IoError(io::Error),
     ObjectError(object::Error),
-    RefError(io::Error),
     ReferenceNotACommit,
     WorkingDirError(working_dir::Error),
     WorkingDirNotClean,
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Error {
+        Error::IoError(e)
+    }
+}
+
+impl From<working_dir::Error> for Error {
+    fn from(e: working_dir::Error) -> Error {
+        Error::WorkingDirError(e)
+    }
 }
 
 pub fn cmd_merge(args: &[String]) {
@@ -37,8 +48,8 @@ fn merge(ref_name: &str) -> Result<(), Error> {
         return Err(Error::WorkingDirNotClean);
     }
 
-    let cur_commit = refs::get_ref_hash("HEAD").map_err(Error::RefError)?;
-    let dst_commit = refs::get_ref_hash(&ref_name).map_err(Error::RefError)?;
+    let cur_commit = refs::get_ref_hash("HEAD")?;
+    let dst_commit = refs::get_ref_hash(&ref_name)?;
     if cur_commit == dst_commit {
         return Err(Error::AlreadyUpToDate);
     }
@@ -48,25 +59,25 @@ fn merge(ref_name: &str) -> Result<(), Error> {
         return Err(Error::ReferenceNotACommit);
     }
 
-    let cur_branch = refs::read_ref("HEAD").map_err(Error::RefError)?;
+    let cur_branch = refs::read_ref("HEAD")?;
     let can_fast_forward = commit::is_ancestor(&dst_commit, &cur_commit);
     if can_fast_forward {
-        working_dir::update_from_commit(&dst_commit).map_err(Error::WorkingDirError)?;
+        working_dir::update_from_commit(&dst_commit)?;
 
         let branch_path = Path::new(".git")
             .join("refs")
             .join("heads")
             .join(&cur_branch);
-        fs::write(branch_path, format!("{}\n", dst_commit)).map_err(Error::IoError)?;
+        fs::write(branch_path, format!("{}\n", dst_commit))?;
         println!("Fast-forward");
     } else {
-        working_dir::update_from_merge(&cur_commit, &dst_commit).map_err(Error::WorkingDirError)?;
+        working_dir::update_from_merge(&cur_commit, &dst_commit)?;
         let merge_msg = format!("Merge {} into {}", ref_name, cur_branch);
         println!("{}", merge_msg);
 
         let mut has_conflicts = false;
-        for file in working_dir::get_all_files_path().map_err(Error::IoError)? {
-            let data = fs::read_to_string(&file).map_err(Error::IoError)?;
+        for file in working_dir::get_all_files_path()? {
+            let data = fs::read_to_string(&file)?;
             if data.contains("<<<<<<") {
                 println!("CONFLICT {}", file);
                 has_conflicts = true;

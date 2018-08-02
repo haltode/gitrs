@@ -7,9 +7,14 @@ use working_dir;
 
 #[derive(Debug)]
 pub enum Error {
-    HashObjError(io::Error),
     IndexError(index::Error),
     IoError(io::Error),
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Error {
+        Error::IoError(e)
+    }
 }
 
 enum State {
@@ -37,13 +42,12 @@ pub fn cmd_status() {
 fn status() -> Result<Vec<(State, String)>, Error> {
     let mut status = Vec::new();
     let index = index::read_entries().map_err(Error::IndexError)?;
-    let files = working_dir::get_all_files_path().map_err(Error::IoError)?;
+    let files = working_dir::get_all_files_path()?;
     for file in &files {
         match index.iter().find(|e| file == &e.path) {
             Some(e) => {
-                let file_content = fs::read(&file).map_err(Error::IoError)?;
-                let hash = hash_object::hash_object(&file_content, "blob", false)
-                    .map_err(Error::HashObjError)?;
+                let file_content = fs::read(&file)?;
+                let hash = hash_object::hash_object(&file_content, "blob", false)?;
                 if e.hash != hash {
                     status.push((State::Modified, file.to_string()));
                 }
