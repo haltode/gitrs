@@ -1,0 +1,12 @@
+#!/bin/sh
+
+gitrs="cargo run"
+
+./branch
+cd repo
+
+$gitrs checkout master
+echo 'diverge' > div
+$gitrs add div
+$gitrs commit -m "diverge commit"
+$gitrs merge new_b

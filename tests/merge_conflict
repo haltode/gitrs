@@ -1,0 +1,12 @@
+#!/bin/sh
+
+gitrs="cargo run"
+
+./branch
+cd repo
+
+$gitrs checkout master
+echo 'conflict' >> hey
+$gitrs add hey
+$gitrs commit -m "conflict commit"
+$gitrs merge new_b
