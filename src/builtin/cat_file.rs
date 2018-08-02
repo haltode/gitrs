@@ -3,6 +3,7 @@ use std::str;
 use builtin::read_tree;
 use cli;
 use object;
+use object::Object;
 
 #[derive(Debug)]
 pub enum Error {
@@ -27,7 +28,7 @@ pub fn cmd_cat_file(args: &[String], flags: &[String]) {
 }
 
 pub fn cat_file(hash_prefix: &str, mode: &str) -> Result<(), Error> {
-    let object = object::get_object(hash_prefix).map_err(Error::ObjectError)?;
+    let object = Object::new(hash_prefix).map_err(Error::ObjectError)?;
     match mode {
         "--type" | "-t" => println!("{}", object.obj_type),
         "--size" | "-s" => println!("{}", object.obj_size),

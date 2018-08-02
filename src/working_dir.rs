@@ -8,6 +8,7 @@ use builtin::commit;
 use builtin::read_tree;
 use index;
 use object;
+use object::Object;
 use refs;
 
 #[derive(Debug)]
@@ -46,8 +47,8 @@ pub fn diff_from_commit(oldest: &str, latest: &str) -> Result<Vec<Change>, Error
     for entry in &latest_tree {
         match oldest_tree.iter().find(|e| entry.path == e.path) {
             Some(e) => {
-                let oldest_obj = object::get_object(&e.hash).map_err(Error::ObjectError)?;
-                let latest_obj = object::get_object(&entry.hash).map_err(Error::ObjectError)?;
+                let oldest_obj = Object::new(&e.hash).map_err(Error::ObjectError)?;
+                let latest_obj = Object::new(&entry.hash).map_err(Error::ObjectError)?;
                 let state = match oldest_obj.data != latest_obj.data {
                     true => State::Modified,
                     false => State::Same,
@@ -108,8 +109,8 @@ pub fn update_from_merge(commit1: &str, commit2: &str) -> Result<(), Error> {
     for change in &changes1 {
         match changes2.iter().find(|c| c.path == change.path) {
             Some(c) => {
-                let obj1 = object::get_object(&change.hash).map_err(Error::ObjectError)?;
-                let obj2 = object::get_object(&c.hash).map_err(Error::ObjectError)?;
+                let obj1 = Object::new(&change.hash).map_err(Error::ObjectError)?;
+                let obj2 = Object::new(&c.hash).map_err(Error::ObjectError)?;
                 if obj1.data != obj2.data {
                     // Merge conflict (no merge at all or intelligent conflict
                     // marker, just mark everything as conflict)
@@ -153,7 +154,7 @@ pub fn update_from_merge(commit1: &str, commit2: &str) -> Result<(), Error> {
 fn update_single_change(change: &Change) -> Result<(), Error> {
     match change.state {
         State::New | State::Modified | State::Same => {
-            let blob = object::get_object(&change.hash).map_err(Error::ObjectError)?;
+            let blob = Object::new(&change.hash).map_err(Error::ObjectError)?;
             fs::write(&change.path, blob.data).map_err(Error::IoError)?;
         }
         State::Deleted => fs::remove_file(&change.path).map_err(Error::IoError)?,

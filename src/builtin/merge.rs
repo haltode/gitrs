@@ -5,6 +5,7 @@ use std::path::Path;
 use builtin::commit;
 use builtin::status;
 use object;
+use object::Object;
 use refs;
 use working_dir;
 
@@ -42,7 +43,7 @@ fn merge(ref_name: &str) -> Result<(), Error> {
         return Err(Error::AlreadyUpToDate);
     }
 
-    let object = object::get_object(&dst_commit).map_err(Error::ObjectError)?;
+    let object = Object::new(&dst_commit).map_err(Error::ObjectError)?;
     if object.obj_type != "commit" {
         return Err(Error::ReferenceNotACommit);
     }

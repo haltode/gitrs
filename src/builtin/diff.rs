@@ -12,6 +12,7 @@ use std::str;
 
 use index;
 use object;
+use object::Object;
 
 #[derive(Debug)]
 pub enum Error {
@@ -41,7 +42,7 @@ fn diff(paths: &[String]) -> Result<(), Error> {
             continue;
         }
 
-        let object = object::get_object(&entry.hash).map_err(Error::ObjectError)?;
+        let object = Object::new(&entry.hash).map_err(Error::ObjectError)?;
         if object.obj_type != "blob" {
             continue;
         }

@@ -3,6 +3,7 @@ use std::str;
 
 use builtin::status;
 use object;
+use object::Object;
 use refs;
 use working_dir;
 
@@ -38,7 +39,7 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
         false => refs::get_ref_hash(&ref_name).map_err(Error::RefError)?,
     };
 
-    let object = object::get_object(&commit).map_err(Error::ObjectError)?;
+    let object = Object::new(&commit).map_err(Error::ObjectError)?;
     if object.obj_type != "commit" {
         return Err(Error::ReferenceNotACommit);
     }

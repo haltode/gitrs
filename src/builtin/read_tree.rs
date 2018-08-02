@@ -3,6 +3,7 @@ use std::str;
 
 use builtin::cat_file;
 use object;
+use object::Object;
 use sha1;
 
 #[derive(Debug)]
@@ -36,7 +37,7 @@ pub fn cmd_read_tree(args: &[String]) {
 
 pub fn read_tree(hash_prefix: &str) -> Result<Vec<Entry>, Error> {
     let mut tree = Vec::new();
-    let object = object::get_object(hash_prefix).map_err(Error::ObjectError)?;
+    let object = Object::new(hash_prefix).map_err(Error::ObjectError)?;
     if object.obj_type != "tree" {
         println!("read-tree: object is not a tree but '{}'", object.obj_type);
         return Ok(tree);

@@ -10,6 +10,7 @@ use builtin::hash_object;
 use builtin::write_tree;
 use cli;
 use object;
+use object::Object;
 use refs;
 
 #[derive(Debug)]
@@ -102,7 +103,7 @@ pub fn commit(message: &str) -> Result<String, Error> {
 }
 
 pub fn get_tree(hash: &str) -> Result<String, Error> {
-    let object = object::get_object(&hash).map_err(Error::ObjectError)?;
+    let object = Object::new(&hash).map_err(Error::ObjectError)?;
     let data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
     if !data.starts_with("tree ") || data.len() < 45 {
         return Err(Error::InvalidTree);
@@ -112,7 +113,7 @@ pub fn get_tree(hash: &str) -> Result<String, Error> {
 }
 
 pub fn get_parent(hash: &str) -> Result<String, Error> {
-    let object = object::get_object(&hash).map_err(Error::ObjectError)?;
+    let object = Object::new(&hash).map_err(Error::ObjectError)?;
     let data = str::from_utf8(&object.data).map_err(Error::Utf8Error)?;
     let data = match data.get(46..) {
         Some(d) => d,
