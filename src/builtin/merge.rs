@@ -75,7 +75,7 @@ fn merge(ref_name: &str) -> Result<(), Error> {
         if !has_conflicts {
             commit::commit(&merge_msg).map_err(Error::CommitError)?;
         } else {
-            println!("Conflicts detected, fix them and commit to finish merge:");
+            println!("Conflicts detected, fix them and commit to finish merge.");
         }
     }
 
