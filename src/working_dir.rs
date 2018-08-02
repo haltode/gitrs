@@ -1,5 +1,7 @@
+use std::collections::VecDeque;
 use std::fs;
 use std::io;
+use std::path::PathBuf;
 use std::str;
 
 use builtin::commit;
@@ -106,4 +108,38 @@ fn update_single_change(change: &Change) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+pub fn get_all_files_path() -> io::Result<Vec<String>> {
+    let mut files = Vec::new();
+    let mut queue = VecDeque::new();
+    queue.push_back(PathBuf::from("."));
+    while let Some(dir) = queue.pop_front() {
+        if let Some(dir_name) = dir.file_name() {
+            if let Some(dir_name) = dir_name.to_str() {
+                if dir_name.contains(".git") {
+                    continue;
+                }
+            }
+        }
+
+        for entry in fs::read_dir(dir)? {
+            let path = entry?.path();
+            if path.is_dir() {
+                queue.push_back(path);
+            } else {
+                let mut path = match path.to_str() {
+                    Some(p) => p,
+                    None => continue,
+                };
+                if path.starts_with("./") {
+                    path = &path[2..];
+                }
+
+                files.push(path.to_string());
+            }
+        }
+    }
+
+    Ok(files)
 }
