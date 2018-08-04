@@ -58,7 +58,7 @@ fn push(remote: &str, branch: &str) -> Result<(), Error> {
         }
     }
 
-    let remote_hash = refs::get_ref_hash(&branch).unwrap_or(String::new());
+    let remote_hash = refs::get_ref_hash(&branch)?;
     if local_hash == remote_hash {
         return Err(Error::AlreadyUpToDate);
     } else {

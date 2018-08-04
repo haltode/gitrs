@@ -51,7 +51,7 @@ pub fn fetch(remote: &str, branch: &str) -> Result<(), Error> {
     if !Path::new(".git").exists() {
         return Err(Error::RemoteNotAGitRepo);
     }
-    let remote_hash = refs::get_ref_hash(&branch).unwrap_or(String::new());
+    let remote_hash = refs::get_ref_hash(&branch)?;
     if local_hash == remote_hash {
         return Err(Error::AlreadyUpToDate);
     }
@@ -76,7 +76,7 @@ pub fn fetch(remote: &str, branch: &str) -> Result<(), Error> {
     let fetch_head = Path::new(".git").join("FETCH_HEAD");
     fs::write(
         fetch_head,
-        format!("{} branch '{}' of {}", remote_hash, branch, url),
+        format!("{} branch '{}' of {}\n", remote_hash, branch, url),
     )?;
 
     println!("Count: {} objects", missing.len());

@@ -62,8 +62,14 @@ pub enum State {
 }
 
 pub fn diff_from_commit(oldest: &str, latest: &str) -> Result<Vec<Change>, Error> {
-    let tree_hash = commit::get_tree_hash(&oldest)?;
-    let oldest_tree = read_tree::read_tree(&tree_hash)?;
+    let tree_hash = match oldest.is_empty() {
+        true => String::new(),
+        false => commit::get_tree_hash(&oldest)?,
+    };
+    let oldest_tree = match tree_hash.is_empty() {
+        true => Vec::new(),
+        false => read_tree::read_tree(&tree_hash)?,
+    };
     let tree_hash = commit::get_tree_hash(&latest)?;
     let latest_tree = read_tree::read_tree(&tree_hash)?;
 

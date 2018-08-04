@@ -10,7 +10,7 @@ pub fn cmd_init(args: &[String]) {
     }
 }
 
-fn init(dir_name: &str) -> io::Result<()> {
+pub fn init(dir_name: &str) -> io::Result<()> {
     if !dir_name.is_empty() {
         fs::create_dir(&dir_name)?;
     }

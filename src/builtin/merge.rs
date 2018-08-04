@@ -60,7 +60,7 @@ pub fn merge(ref_name: &str) -> Result<(), Error> {
     }
 
     let cur_branch = refs::read_ref("HEAD")?;
-    let can_fast_forward = commit::is_ancestor(&dst_commit, &cur_commit);
+    let can_fast_forward = cur_commit.is_empty() || commit::is_ancestor(&dst_commit, &cur_commit);
     if can_fast_forward {
         working_dir::update_from_commit(&dst_commit)?;
 

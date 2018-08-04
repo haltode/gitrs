@@ -40,7 +40,7 @@ fn list_remotes() -> io::Result<()> {
     Ok(())
 }
 
-fn add_remote(name: &str, url: &str) -> io::Result<()> {
+pub fn add_remote(name: &str, url: &str) -> io::Result<()> {
     let section = format!("remote.{}.url", name);
     config::config("add", &section, url)?;
     Ok(())

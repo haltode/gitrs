@@ -19,7 +19,7 @@ pub fn cmd_pull(args: &[String]) {
     }
 }
 
-fn pull(remote: &str, branch: &str) -> Result<(), Error> {
+pub fn pull(remote: &str, branch: &str) -> Result<(), Error> {
     fetch::fetch(&remote, &branch).map_err(Error::FetchError)?;
     merge::merge("FETCH_HEAD").map_err(Error::MergeError)?;
     Ok(())

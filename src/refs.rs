@@ -6,6 +6,10 @@ pub fn read_ref(name: &str) -> io::Result<String> {
     let ref_name = full_ref_name(name);
     let ref_path = Path::new(".git").join(ref_name);
 
+    if !ref_path.exists() {
+        return Ok(String::new());
+    }
+
     let mut value = fs::read_to_string(ref_path)?;
     // Remove '\n' character
     value.pop();
@@ -26,7 +30,8 @@ pub fn read_ref(name: &str) -> io::Result<String> {
 
 pub fn get_ref_hash(name: &str) -> io::Result<String> {
     let value = read_ref(name)?;
-    if name == "HEAD" && is_branch(&value) {
+    let is_hash = value.len() == 40 && value.chars().all(|c| c.is_ascii_hexdigit());
+    if name == "HEAD" && !is_hash {
         return read_ref(&value);
     }
 

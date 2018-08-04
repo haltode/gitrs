@@ -21,7 +21,7 @@ fn main() {
     let (args, flags) = cli::split_args_from_flags(args);
     let cmd = &args[1];
     let args = &args[2..];
-    if cmd != "init" && !Path::new(".git").exists() {
+    if cmd != "init" && cmd != "clone" && !Path::new(".git").exists() {
         println!("Not a top-level git repository");
         return;
     }
@@ -46,6 +46,7 @@ fn main() {
         "push" => builtin::push::cmd_push(&args),
         "fetch" => builtin::fetch::cmd_fetch(&args),
         "pull" => builtin::pull::cmd_pull(&args),
+        "clone" => builtin::clone::cmd_clone(&args),
         "help" | _ => print_help(),
     }
 }
