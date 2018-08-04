@@ -5,6 +5,7 @@ pub mod checkout;
 pub mod commit;
 pub mod config;
 pub mod diff;
+pub mod fetch;
 pub mod hash_object;
 pub mod init;
 pub mod log;

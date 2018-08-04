@@ -44,6 +44,7 @@ fn main() {
         "merge" => builtin::merge::cmd_merge(&args),
         "remote" => builtin::remote::cmd_remote(&args),
         "push" => builtin::push::cmd_push(&args),
+        "fetch" => builtin::fetch::cmd_fetch(&args),
         "help" | _ => print_help(),
     }
 }
