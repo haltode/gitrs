@@ -1,0 +1,8 @@
+#!/bin/sh
+
+gitrs="cargo run"
+
+./merge_non_fast_forward
+rm -rf copy
+
+$gitrs clone repo copy
