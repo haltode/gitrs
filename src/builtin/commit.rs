@@ -44,7 +44,7 @@ pub fn cmd_commit(args: &[String], flags: &[String]) {
 }
 
 pub fn commit(message: &str) -> Result<String, Error> {
-    let user = config::parse_config()?;
+    let user = config::Config::new()?;
     if user.name.is_empty() || user.email.is_empty() {
         println!("Need to specify your name/email before committing:");
         println!("\tgitrs config --add user.name your_name");
