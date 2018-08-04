@@ -18,12 +18,18 @@ pub fn cmd_log() {
 
 fn log() -> Result<(), Error> {
     let mut commit_hash = refs::get_ref_hash("HEAD").map_err(Error::RefError)?;
-    while !commit_hash.is_empty() {
+    loop {
         println!("commit {}", commit_hash);
         if let Err(why) = cat_file::cat_file(&commit_hash, "--print") {
             println!("Cannot retrieve commit info: {:?}", why);
         }
-        commit_hash = commit::get_parent_hash(&commit_hash).map_err(Error::CommitError)?;
+
+        let parents = commit::get_parents_hashes(&commit_hash).map_err(Error::CommitError)?;
+        // Linear log, ignore multiple parents
+        commit_hash = match parents.get(0) {
+            Some(h) => h.to_string(),
+            None => break,
+        };
     }
     Ok(())
 }

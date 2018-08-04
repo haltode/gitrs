@@ -54,21 +54,35 @@ pub fn commit(message: &str) -> Result<String, Error> {
     let author = format!("{} <{}>", user.name, user.email);
 
     let tree = write_tree::write_tree().map_err(Error::TreeError)?;
-    let mut header = format!("tree {}", tree);
+
+    let mut parents = Vec::new();
     let cur_branch = refs::read_ref("HEAD")?;
     if refs::exists_ref(&cur_branch) || refs::is_detached_head() {
         let cur_commit = match refs::get_ref_hash(&cur_branch) {
             Ok(r) => r,
             Err(_) => cur_branch.to_string(),
         };
-        header.push_str(&format!("\nparent {}", cur_commit));
+        parents.push(cur_commit.to_string());
+
+        let merge_head = Path::new(".git").join("MERGE_HEAD");
+        let is_in_merge = merge_head.exists();
+        if is_in_merge {
+            let merge_parent = fs::read_to_string(&merge_head)?;
+            parents.push(merge_parent);
+            fs::remove_file(&merge_head)?;
+        }
 
         let cur_hash = get_tree_hash(&cur_commit)?;
-        if tree == cur_hash {
+        if tree == cur_hash && !is_in_merge {
             println!("On {}", cur_branch);
             println!("nothing to commit, working tree clean");
             return Err(Error::NothingToCommit);
         }
+    }
+
+    let mut header = format!("tree {}", tree);
+    for parent in parents {
+        header.push_str(&format!("\nparent {}", parent));
     }
 
     let start = SystemTime::now();
@@ -111,34 +125,32 @@ pub fn get_tree_hash(commit: &str) -> Result<String, Error> {
     Ok(tree)
 }
 
-pub fn get_parent_hash(commit: &str) -> Result<String, Error> {
+pub fn get_parents_hashes(commit: &str) -> Result<Vec<String>, Error> {
     let object = Object::new(&commit).map_err(Error::ObjectError)?;
     let data = str::from_utf8(&object.data).unwrap();
-    let data = match data.get(46..) {
-        Some(d) => d,
-        None => return Err(Error::InvalidTree),
-    };
-    let parent = match data.starts_with("parent ") {
-        true => {
-            if data.len() < 47 {
-                return Err(Error::InvalidTree);
-            } else {
-                data[7..47].to_string()
-            }
-        }
-        false => String::new(),
-    };
-    Ok(parent)
-}
 
-fn get_ancestors(hash: &str) -> Result<Vec<String>, Error> {
-    let mut ancestors = Vec::new();
-    let mut cur_commit = hash.to_string();
-    while !cur_commit.is_empty() {
-        cur_commit = get_parent_hash(&cur_commit)?;
-        ancestors.push(cur_commit.clone());
+    let mut parents = Vec::new();
+    for line in data.lines() {
+        let prefix = "parent ";
+        if !line.starts_with(prefix) || line.len() != prefix.len() + 40 {
+            continue;
+        }
+
+        let start = prefix.len();
+        let end = start + 40;
+        let hash = &line[start..end];
+        parents.push(hash.to_string());
     }
 
+    Ok(parents)
+}
+
+fn get_ancestors(commit: &str) -> Result<Vec<String>, Error> {
+    let mut ancestors = Vec::new();
+    for parent in get_parents_hashes(&commit)? {
+        ancestors.push(parent.to_string());
+        ancestors.extend(get_ancestors(&parent)?);
+    }
     Ok(ancestors)
 }
 
