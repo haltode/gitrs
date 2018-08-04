@@ -11,6 +11,7 @@ pub mod init;
 pub mod log;
 pub mod ls_files;
 pub mod merge;
+pub mod pull;
 pub mod push;
 pub mod read_tree;
 pub mod remote;

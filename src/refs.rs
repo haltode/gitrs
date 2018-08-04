@@ -15,6 +15,12 @@ pub fn read_ref(name: &str) -> io::Result<String> {
         value = value.split_off(head_prefix.len());
     }
 
+    let fetch_mark = " branch ";
+    if value.contains(fetch_mark) {
+        // Only retrieve the hash
+        value.split_off(40);
+    }
+
     Ok(value)
 }
 
@@ -64,7 +70,7 @@ pub fn is_detached_head() -> bool {
 }
 
 fn full_ref_name(name: &str) -> String {
-    if name == "HEAD" || name.starts_with("refs/heads/") {
+    if name == "HEAD" || name == "FETCH_HEAD" || name.starts_with("refs/heads/") {
         name.to_string()
     } else {
         format!("refs/heads/{}", name)

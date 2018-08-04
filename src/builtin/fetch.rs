@@ -36,7 +36,7 @@ pub fn cmd_fetch(args: &[String]) {
     }
 }
 
-fn fetch(remote: &str, branch: &str) -> Result<(), Error> {
+pub fn fetch(remote: &str, branch: &str) -> Result<(), Error> {
     let user = config::Config::new()?;
     let url = match user.remotes.iter().find(|r| r.name == remote) {
         Some(r) => r.url.to_string(),
@@ -72,6 +72,12 @@ fn fetch(remote: &str, branch: &str) -> Result<(), Error> {
     let rem_dir = Path::new(".git").join("refs").join("remotes").join(&remote);
     fs::create_dir_all(&rem_dir)?;
     fs::write(rem_dir.join(&branch), format!("{}\n", remote_hash))?;
+
+    let fetch_head = Path::new(".git").join("FETCH_HEAD");
+    fs::write(
+        fetch_head,
+        format!("{} branch '{}' of {}", remote_hash, branch, url),
+    )?;
 
     println!("Count: {} objects", missing.len());
     println!("From: {}", url);

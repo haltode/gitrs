@@ -1,0 +1,17 @@
+#!/bin/sh
+
+gitrs="cargo run"
+
+./first_commit
+
+rm -rf rem
+cp -r repo rem
+cd rem
+echo "diff" > newf
+$gitrs add newf
+$gitrs commit -m "new commit"
+cd ..
+
+cd repo
+$gitrs config --add remote.new_rem.url ../rem
+$gitrs pull new_rem master

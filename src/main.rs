@@ -45,6 +45,7 @@ fn main() {
         "remote" => builtin::remote::cmd_remote(&args),
         "push" => builtin::push::cmd_push(&args),
         "fetch" => builtin::fetch::cmd_fetch(&args),
+        "pull" => builtin::pull::cmd_pull(&args),
         "help" | _ => print_help(),
     }
 }

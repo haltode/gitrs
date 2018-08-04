@@ -43,7 +43,7 @@ pub fn cmd_merge(args: &[String]) {
     }
 }
 
-fn merge(ref_name: &str) -> Result<(), Error> {
+pub fn merge(ref_name: &str) -> Result<(), Error> {
     if !status::is_clean_working_dir() {
         return Err(Error::WorkingDirNotClean);
     }
