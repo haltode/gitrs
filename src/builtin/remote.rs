@@ -1,6 +1,7 @@
 use std::io;
 
 use builtin::config;
+use object;
 
 #[derive(Debug)]
 pub struct Remote {
@@ -43,4 +44,18 @@ fn add_remote(name: &str, url: &str) -> io::Result<()> {
     let section = format!("remote.{}.url", name);
     config::config("add", &section, url)?;
     Ok(())
+}
+
+pub fn find_remote_missing_objects(local_commit: &str, remote_commit: &str) -> Vec<String> {
+    let local_objects = object::find_objects_from_commit(&local_commit);
+    let remote_objects = object::find_objects_from_commit(&remote_commit);
+
+    let mut missing = Vec::new();
+    for obj in local_objects {
+        if !remote_objects.contains(&obj) {
+            missing.push(obj);
+        }
+    }
+
+    missing
 }

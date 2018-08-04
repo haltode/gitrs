@@ -7,6 +7,8 @@ use std::path::{Path, PathBuf};
 use std::str;
 
 use bits::big_endian;
+use builtin::commit;
+use builtin::read_tree;
 use zlib;
 
 #[derive(Debug)]
@@ -82,4 +84,38 @@ impl Object {
 
         Err(Error::ObjectNotFound)
     }
+}
+
+pub fn find_objects_from_commit(commit: &str) -> Vec<String> {
+    let mut objects = Vec::new();
+    objects.push(commit.to_string());
+
+    if let Ok(tree) = commit::get_tree_hash(&commit) {
+        objects.extend(find_objects_from_tree(&tree));
+    }
+
+    if let Ok(parents) = commit::get_parents_hashes(&commit) {
+        for parent in parents {
+            objects.extend(find_objects_from_commit(&parent));
+        }
+    }
+
+    objects
+}
+
+pub fn find_objects_from_tree(tree: &str) -> Vec<String> {
+    let mut objects = Vec::new();
+    objects.push(tree.to_string());
+
+    if let Ok(entries) = read_tree::read_tree(&tree) {
+        for entry in entries {
+            if Path::new(&entry.path).is_dir() {
+                objects.extend(find_objects_from_tree(&entry.hash));
+            } else {
+                objects.push(entry.hash.to_string());
+            }
+        }
+    }
+
+    objects
 }
