@@ -11,5 +11,6 @@ pub mod log;
 pub mod ls_files;
 pub mod merge;
 pub mod read_tree;
+pub mod remote;
 pub mod status;
 pub mod write_tree;

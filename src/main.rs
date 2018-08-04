@@ -42,6 +42,7 @@ fn main() {
         "branch" => builtin::branch::cmd_branch(&args, &flags),
         "checkout" => builtin::checkout::cmd_checkout(&args),
         "merge" => builtin::merge::cmd_merge(&args),
+        "remote" => builtin::remote::cmd_remote(&args),
         "help" | _ => print_help(),
     }
 }
