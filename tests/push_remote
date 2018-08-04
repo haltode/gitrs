@@ -1,0 +1,15 @@
+#!/bin/sh
+
+gitrs="cargo run"
+
+./first_commit
+
+rm -rf rem
+mkdir rem
+cd rem
+$gitrs init
+cd ..
+
+cd repo
+$gitrs config --add remote.new_rem.url ../rem
+$gitrs push new_rem master
