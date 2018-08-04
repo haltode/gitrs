@@ -117,6 +117,10 @@ impl Config {
         fs::write(config_file, config_fmt)?;
         Ok(())
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.name.is_empty() && self.email.is_empty() && self.remotes.is_empty()
+    }
 }
 
 pub fn cmd_config(args: &[String], flags: &[String]) {

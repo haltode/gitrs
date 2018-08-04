@@ -43,6 +43,7 @@ fn main() {
         "checkout" => builtin::checkout::cmd_checkout(&args),
         "merge" => builtin::merge::cmd_merge(&args),
         "remote" => builtin::remote::cmd_remote(&args),
+        "push" => builtin::push::cmd_push(&args),
         "help" | _ => print_help(),
     }
 }
