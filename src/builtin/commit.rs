@@ -14,13 +14,14 @@ use refs;
 
 #[derive(Debug)]
 pub enum Error {
-    ConfigMissing,
-    InvalidTree,
+    CannotGetParentFromCommit,
+    CannotGetTreeFromCommit,
     IoError(io::Error),
     NoCommonAncestor,
     NothingToCommit,
     ObjectError(object::Error),
     TreeError(write_tree::Error),
+    UserConfigIncomplete,
 }
 
 impl From<io::Error> for Error {
@@ -46,21 +47,19 @@ pub fn cmd_commit(args: &[String], flags: &[String]) {
 pub fn commit(message: &str) -> Result<String, Error> {
     let user = config::Config::new()?;
     if user.name.is_empty() || user.email.is_empty() {
-        println!("Need to specify your name/email before committing:");
-        println!("\tgitrs config --add user.name your_name");
-        println!("\tgitrs config --add user.email your_email");
-        return Err(Error::ConfigMissing);
+        return Err(Error::UserConfigIncomplete);
     }
     let author = format!("{} <{}>", user.name, user.email);
 
-    let tree = write_tree::write_tree().map_err(Error::TreeError)?;
-
+    let commit_tree = write_tree::write_tree().map_err(Error::TreeError)?;
     let mut parents = Vec::new();
-    let cur_branch = refs::read_ref("HEAD")?;
-    if refs::exists_ref(&cur_branch) || refs::is_detached_head() {
-        let cur_commit = match refs::get_ref_hash(&cur_branch) {
+
+    let head = refs::read_ref("HEAD")?;
+    let has_commits = refs::exists_ref(&head) || refs::is_detached_head();
+    if has_commits {
+        let cur_commit = match refs::get_ref_hash(&head) {
             Ok(r) => r,
-            Err(_) => cur_branch.to_string(),
+            Err(_) => head.to_string(),
         };
         parents.push(cur_commit.to_string());
 
@@ -73,14 +72,14 @@ pub fn commit(message: &str) -> Result<String, Error> {
         }
 
         let cur_hash = get_tree_hash(&cur_commit)?;
-        if tree == cur_hash && !is_in_merge {
-            println!("On {}", cur_branch);
+        if commit_tree == cur_hash && !is_in_merge {
+            println!("On {}", head);
             println!("nothing to commit, working tree clean");
             return Err(Error::NothingToCommit);
         }
     }
 
-    let mut header = format!("tree {}", tree);
+    let mut header = format!("tree {}", commit_tree);
     for parent in parents {
         header.push_str(&format!("\nparent {}", parent));
     }
@@ -102,16 +101,13 @@ pub fn commit(message: &str) -> Result<String, Error> {
     let write = true;
     let hash = hash_object::hash_object(commit_content.as_bytes(), "commit", write)?;
 
-    let out_dir = match refs::is_detached_head() {
+    let ref_path = match refs::is_detached_head() {
         true => Path::new(".git").join("HEAD"),
-        false => Path::new(".git")
-            .join("refs")
-            .join("heads")
-            .join(&cur_branch),
+        false => Path::new(".git").join("refs").join("heads").join(&head),
     };
-    fs::write(out_dir, format!("{}\n", hash))?;
+    fs::write(ref_path, format!("{}\n", hash))?;
 
-    println!("[{} {}] {}", cur_branch, &hash[..7], message);
+    println!("[{} {}] {}", head, &hash[..7], message);
     Ok(hash)
 }
 
@@ -119,7 +115,7 @@ pub fn get_tree_hash(commit: &str) -> Result<String, Error> {
     let object = Object::new(&commit).map_err(Error::ObjectError)?;
     let data = str::from_utf8(&object.data).unwrap();
     if !data.starts_with("tree ") || data.len() < 45 {
-        return Err(Error::InvalidTree);
+        return Err(Error::CannotGetTreeFromCommit);
     }
     let tree = data[5..45].to_string();
     Ok(tree)
@@ -130,10 +126,10 @@ pub fn get_parents_hashes(commit: &str) -> Result<Vec<String>, Error> {
     let data = str::from_utf8(&object.data).unwrap();
 
     let mut parents = Vec::new();
-    for line in data.lines() {
-        let prefix = "parent ";
-        if !line.starts_with(prefix) || line.len() != prefix.len() + 40 {
-            continue;
+    let prefix = "parent ";
+    for line in data.lines().filter(|l| l.starts_with(prefix)) {
+        if line.len() != prefix.len() + 40 {
+            return Err(Error::CannotGetParentFromCommit);
         }
 
         let start = prefix.len();

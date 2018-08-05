@@ -23,11 +23,12 @@ impl Config {
         if config_file.exists() {
             let data = fs::read_to_string(config_file)?;
             for line in data.lines().map(|l| l.trim()) {
+                if line.starts_with("[") && line.ends_with("]") {
+                    cur_section = line.to_string();
+                }
+
                 let elem: Vec<&str> = line.split('=').collect();
                 if elem.len() != 2 {
-                    if line.starts_with("[") && line.ends_with("]") {
-                        cur_section = line.to_string();
-                    }
                     continue;
                 }
 
@@ -73,7 +74,7 @@ impl Config {
         }
     }
 
-    pub fn get(&mut self, section: &str, subsection: &str) -> Option<String> {
+    pub fn get(&self, section: &str, subsection: &str) -> Option<String> {
         match section {
             "user" => match subsection {
                 "name" => return Some(self.name.to_string()),
@@ -106,7 +107,7 @@ impl Config {
         }
     }
 
-    pub fn write_config(&mut self) -> io::Result<()> {
+    pub fn write_config(&self) -> io::Result<()> {
         let mut config_fmt = format!("[user]\n\tname = {}\n\temail = {}\n", self.name, self.email);
         for remote in &self.remotes {
             let remote_entry = format!("[remote \"{}\"]\n\turl = {}\n", remote.name, remote.url);

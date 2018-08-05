@@ -42,11 +42,10 @@ pub fn write_to_ref(name: &str, value: &str) -> io::Result<()> {
     let ref_name = full_ref_name(name);
     let ref_path = Path::new(".git").join(ref_name);
 
-    let prefix = match name == "HEAD" && is_branch(&value) {
-        true => "ref: refs/heads/",
-        false => "",
+    let formated_value = match name == "HEAD" && is_branch(&value) {
+        true => format!("ref: refs/heads/{}\n", value),
+        false => format!("{}\n", value),
     };
-    let formated_value = format!("{}{}\n", prefix, value);
 
     fs::write(ref_path, formated_value)?;
     Ok(())

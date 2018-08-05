@@ -25,22 +25,16 @@ fn branch(name: &str, flag: &str) -> io::Result<()> {
         let refs_dir = Path::new(".git").join("refs").join("heads");
         for entry in fs::read_dir(refs_dir)? {
             let path = entry?.path();
-            if path.is_dir() {
-                continue;
-            }
-
-            let file_name = match path.file_name() {
-                Some(p) => match p.to_str() {
-                    Some(p) => p,
+            if path.is_file() {
+                let file_name = match path.file_name() {
+                    Some(p) => p.to_str().unwrap(),
                     None => continue,
-                },
-                None => continue,
-            };
-
-            if file_name == cur_branch {
-                println!("* {}", file_name);
-            } else {
-                println!("  {}", file_name);
+                };
+                if file_name == cur_branch {
+                    println!("* {}", file_name);
+                } else {
+                    println!("  {}", file_name);
+                }
             }
         }
     } else if !name.is_empty() {

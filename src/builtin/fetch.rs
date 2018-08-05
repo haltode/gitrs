@@ -55,9 +55,7 @@ pub fn fetch(remote: &str, branch: &str) -> Result<(), Error> {
     if local_hash == remote_hash {
         return Err(Error::AlreadyUpToDate);
     }
-    env::set_current_dir(&local_dir)?;
 
-    env::set_current_dir(&remote_dir)?;
     let missing = remote::find_remote_missing_objects(&remote_hash, &local_hash);
     for obj_hash in &missing {
         let obj = object::Object::new(&obj_hash).map_err(Error::ObjectError)?;

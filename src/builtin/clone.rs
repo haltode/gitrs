@@ -49,12 +49,13 @@ fn clone(repository: &str, directory: &str) -> Result<(), Error> {
 
     let absolute_repo_path = fs::canonicalize(&repo_path)?;
     let absolute_dir_path = fs::canonicalize(&dir_path)?;
-    env::set_current_dir(&absolute_dir_path)?;
-    remote::add_remote("origin", absolute_repo_path.to_str().unwrap())?;
 
     env::set_current_dir(&absolute_repo_path)?;
-    if refs::get_ref_hash("HEAD").is_ok() {
-        env::set_current_dir(&absolute_dir_path)?;
+    let has_commits = refs::get_ref_hash("HEAD").is_ok();
+
+    env::set_current_dir(&absolute_dir_path)?;
+    remote::add_remote("origin", absolute_repo_path.to_str().unwrap())?;
+    if has_commits {
         pull::pull("origin", "master").map_err(Error::PullError)?;
     }
 

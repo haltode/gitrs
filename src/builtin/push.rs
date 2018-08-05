@@ -64,8 +64,8 @@ fn push(remote: &str, branch: &str) -> Result<(), Error> {
     } else {
         refs::write_to_ref(&branch, &local_hash)?;
     }
-    env::set_current_dir(&local_dir)?;
 
+    env::set_current_dir(&local_dir)?;
     let missing = remote::find_remote_missing_objects(&local_hash, &remote_hash);
     for obj_hash in &missing {
         let obj = object::Object::new(&obj_hash).map_err(Error::ObjectError)?;

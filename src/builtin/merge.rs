@@ -64,11 +64,7 @@ pub fn merge(ref_name: &str) -> Result<(), Error> {
     if can_fast_forward {
         working_dir::update_from_commit(&dst_commit)?;
 
-        let branch_path = Path::new(".git")
-            .join("refs")
-            .join("heads")
-            .join(&cur_branch);
-        fs::write(branch_path, format!("{}\n", dst_commit))?;
+        refs::write_to_ref(&cur_branch, &dst_commit)?;
         println!("Fast-forward");
     } else {
         working_dir::update_from_merge(&cur_commit, &dst_commit)?;
