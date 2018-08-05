@@ -1,10 +1,3 @@
-// * diff
-//   https://en.wikipedia.org/wiki/Diff
-// * Longest Common Subsequence Problem
-//   https://en.wikipedia.org/wiki/Longest_common_subsequence_problem
-// * Myers algorithm
-// * Patience algorithm
-
 use std::cmp;
 use std::fs;
 use std::io;

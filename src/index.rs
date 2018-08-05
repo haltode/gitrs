@@ -1,6 +1,3 @@
-// * git/Documentation/technical/index-format.txt
-//   https://github.com/git/git/blob/master/Documentation/technical/index-format.txt
-
 use std::fs;
 use std::io;
 use std::os::unix::fs::MetadataExt;

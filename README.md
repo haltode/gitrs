@@ -3,6 +3,16 @@
 A small re-implementation of [git](https://git-scm.com/) (a distributed version
 control system) written in [Rust](https://www.rust-lang.org/).
 
+## Resources used
+
+- [Pro Git book](https://git-scm.com/book/en/v2)
+- [Git docs](https://git-scm.com/docs)
+- [gitcore-tutorial](https://git-scm.com/docs/gitcore-tutorial)
+- [gitrepository-layout](https://git-scm.com/docs/gitrepository-layout)
+- [Git user manual](https://git-scm.com/docs/user-manual.html)
+- [Git from the bottom up](https://jwiegley.github.io/git-from-the-bottom-up/)
+- [The curious coder’s guide to git](https://matthew-brett.github.io/curious-git/)
+
 ## Why?
 
 I wanted a fun project to learn more about the Rust programming language and git

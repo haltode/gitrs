@@ -1,6 +1,3 @@
-// * Git Internals - Git Objects
-//   https://git-scm.com/book/en/v2/Git-Internals-Git-Objects
-
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
