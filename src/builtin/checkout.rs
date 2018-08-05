@@ -5,7 +5,7 @@ use builtin::status;
 use object;
 use object::Object;
 use refs;
-use working_dir;
+use work_dir;
 
 #[derive(Debug)]
 pub enum Error {
@@ -13,8 +13,8 @@ pub enum Error {
     IoError(io::Error),
     ObjectError(object::Error),
     ReferenceNotACommit,
-    WorkingDirError(working_dir::Error),
-    WorkingDirNotClean,
+    WorkDirError(work_dir::Error),
+    WorkDirNotClean,
 }
 
 impl From<io::Error> for Error {
@@ -35,8 +35,8 @@ pub fn cmd_checkout(args: &[String]) {
 }
 
 fn checkout(ref_name: &str) -> Result<(), Error> {
-    if !status::is_clean_working_dir() {
-        return Err(Error::WorkingDirNotClean);
+    if !status::is_clean_work_dir() {
+        return Err(Error::WorkDirNotClean);
     }
 
     let will_detach_head = !refs::is_branch(&ref_name);
@@ -55,7 +55,7 @@ fn checkout(ref_name: &str) -> Result<(), Error> {
         return Err(Error::AlreadyOnIt);
     }
 
-    working_dir::update_from_commit(&commit).map_err(Error::WorkingDirError)?;
+    work_dir::update_from_commit(&commit).map_err(Error::WorkDirError)?;
     refs::write_to_ref("HEAD", ref_name)?;
 
     if will_detach_head {

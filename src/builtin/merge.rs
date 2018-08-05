@@ -7,7 +7,7 @@ use builtin::status;
 use object;
 use object::Object;
 use refs;
-use working_dir;
+use work_dir;
 
 #[derive(Debug)]
 pub enum Error {
@@ -16,8 +16,8 @@ pub enum Error {
     IoError(io::Error),
     ObjectError(object::Error),
     ReferenceNotACommit,
-    WorkingDirError(working_dir::Error),
-    WorkingDirNotClean,
+    WorkDirError(work_dir::Error),
+    WorkDirNotClean,
 }
 
 impl From<io::Error> for Error {
@@ -26,9 +26,9 @@ impl From<io::Error> for Error {
     }
 }
 
-impl From<working_dir::Error> for Error {
-    fn from(e: working_dir::Error) -> Error {
-        Error::WorkingDirError(e)
+impl From<work_dir::Error> for Error {
+    fn from(e: work_dir::Error) -> Error {
+        Error::WorkDirError(e)
     }
 }
 
@@ -44,8 +44,8 @@ pub fn cmd_merge(args: &[String]) {
 }
 
 pub fn merge(ref_name: &str) -> Result<(), Error> {
-    if !status::is_clean_working_dir() {
-        return Err(Error::WorkingDirNotClean);
+    if !status::is_clean_work_dir() {
+        return Err(Error::WorkDirNotClean);
     }
 
     let cur_commit = refs::get_ref_hash("HEAD")?;
@@ -62,12 +62,12 @@ pub fn merge(ref_name: &str) -> Result<(), Error> {
     let cur_branch = refs::read_ref("HEAD")?;
     let can_fast_forward = cur_commit.is_empty() || commit::is_ancestor(&dst_commit, &cur_commit);
     if can_fast_forward {
-        working_dir::update_from_commit(&dst_commit)?;
+        work_dir::update_from_commit(&dst_commit)?;
 
         refs::write_to_ref(&cur_branch, &dst_commit)?;
         println!("Fast-forward");
     } else {
-        working_dir::update_from_merge(&cur_commit, &dst_commit)?;
+        work_dir::update_from_merge(&cur_commit, &dst_commit)?;
         let merge_head = Path::new(".git").join("MERGE_HEAD");
         fs::write(merge_head, &dst_commit)?;
 
@@ -75,7 +75,7 @@ pub fn merge(ref_name: &str) -> Result<(), Error> {
         println!("{}", merge_msg);
 
         let mut has_conflicts = false;
-        for file in working_dir::get_all_files_path()? {
+        for file in work_dir::get_all_files_path()? {
             let data = fs::read_to_string(&file)?;
             if data.contains("<<<<<<") {
                 println!("CONFLICT {}", file);

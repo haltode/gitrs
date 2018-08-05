@@ -5,7 +5,7 @@ mod index;
 mod object;
 mod refs;
 mod sha1;
-mod working_dir;
+mod work_dir;
 mod zlib;
 
 use std::env;

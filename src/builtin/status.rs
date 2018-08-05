@@ -3,7 +3,7 @@ use std::io;
 
 use builtin::hash_object;
 use index;
-use working_dir;
+use work_dir;
 
 #[derive(Debug)]
 pub enum Error {
@@ -42,7 +42,7 @@ pub fn cmd_status() {
 fn status() -> Result<Vec<(State, String)>, Error> {
     let mut status = Vec::new();
     let index = index::read_entries().map_err(Error::IndexError)?;
-    let files = working_dir::get_all_files_path()?;
+    let files = work_dir::get_all_files_path()?;
     for file in &files {
         match index.iter().find(|e| file == &e.path) {
             Some(e) => {
@@ -65,7 +65,7 @@ fn status() -> Result<Vec<(State, String)>, Error> {
     Ok(status)
 }
 
-pub fn is_clean_working_dir() -> bool {
+pub fn is_clean_work_dir() -> bool {
     match status() {
         Ok(changes) => changes.is_empty(),
         Err(_) => false,
