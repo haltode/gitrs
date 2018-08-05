@@ -1,6 +1,5 @@
 use std::fs;
 use std::io;
-use std::path::Path;
 
 use builtin::commit;
 use builtin::status;
@@ -68,9 +67,8 @@ pub fn merge(ref_name: &str) -> Result<(), Error> {
         println!("Fast-forward");
     } else {
         work_dir::update_from_merge(&cur_commit, &dst_commit)?;
-        let merge_head = Path::new(".git").join("MERGE_HEAD");
-        fs::write(merge_head, &dst_commit)?;
 
+        refs::write_to_ref("MERGE_HEAD", &dst_commit)?;
         let merge_msg = format!("Merge {} into {}", ref_name, cur_branch);
         println!("{}", merge_msg);
 

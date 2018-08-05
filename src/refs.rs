@@ -74,7 +74,9 @@ pub fn is_detached_head() -> bool {
 }
 
 fn full_ref_name(name: &str) -> String {
-    if name == "HEAD" || name == "FETCH_HEAD" || name.starts_with("refs/heads/") {
+    if name == "HEAD" || name == "FETCH_HEAD" || name == "MERGE_HEAD"
+        || name.starts_with("refs/heads/")
+    {
         name.to_string()
     } else {
         format!("refs/heads/{}", name)
