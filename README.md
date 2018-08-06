@@ -1,7 +1,78 @@
 # gitrs
 
 A small re-implementation of [git](https://git-scm.com/) (a distributed version
-control system) written in [Rust](https://www.rust-lang.org/).
+control system) written in [Rust](https://www.rust-lang.org/):
+
+- basic commands: `init`, `config`, `add`, `commit`, `status`, `diff`, `log`.
+- branches: `branch`, `checkout`, `merge`.
+- remotes: `clone`, `fetch`, `push`, `pull`, `remote`.
+- plumbing: `hash-object`, `cat-file`, `ls-files`, `read-tree`, `write-tree`.
+
+### Building it
+
+```bash
+$ cargo build --release
+$ cd target/release
+$ ./gitrs
+```
+
+### Running it
+
+```bash
+$ mkdir repo
+$ cd repo
+$ gitrs init
+Initialized empty Git repository in .git
+$ gitrs config --add user.name "John Doe"
+$ gitrs config --add user.email "john.doe@something.com"
+
+$ echo 'Hello world!' > file_a
+$ gitrs status
+new: file_a
+$ gitrs add file_a
+$ gitrs commit -m "first commit"
+[master 5b0cd52] first commit
+
+$ cd ..
+$ gitrs clone repo copy
+Initialized empty Git repository in copy/.git
+Count: 3 objects
+From: /home/haltode/repo
+Fast-forward
+Cloning into copy
+$ cp repo/.git/config copy/.git/config
+$ cd copy
+$ echo 'new file' > file_b
+$ gitrs add file_b
+$ gitrs commit -m "second commit"
+[master 3940393] second commit
+
+$ cd ../repo
+$ gitrs remote add copy_remote ../copy
+$ gitrs branch new_b
+$ gitrs pull copy_remote master
+Count: 3 objects
+From: ../copy
+Fast-forward
+
+$ gitrs checkout new_b
+Switched to branch new_b
+$ echo 'new line' >> file_a
+$ gitrs status
+modified: file_a
+$ gitrs diff
+file_a:
+ Hello world!
++new_line
+$ gitrs add file_a
+$ gitrs commit -m "third commit"
+[new_b 9e4e36b] third commit
+$ gitrs checkout master
+Switched to branch master
+$ gitrs merge new_b
+Merge new_b into master
+[master 7b8e051] Merge new_b into master
+```
 
 ## Resources used
 
