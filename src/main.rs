@@ -52,5 +52,29 @@ fn main() {
 }
 
 fn print_help() {
-    println!("TODO: write help!");
+    println!("Help | list of commands:");
+    println!("* basic commands:");
+    println!("\tinit: create empty git repository");
+    println!("\tconfig: get and set repo options");
+    println!("\tadd: add content to the index");
+    println!("\tcommit: record changes to the repo");
+    println!("\tstatus: show the working dir status");
+    println!("\tdiff: show changes between index and working dir");
+    println!("\tlog: show commit logs");
+    println!("* branches:");
+    println!("\tbranch: list or create branches");
+    println!("\tcheckout: switch branches");
+    println!("\tmerge: merge two branches together");
+    println!("* remotes:");
+    println!("\tclone: clone a git repo into a new dir");
+    println!("\tfetch: retrieve refs and objects from remote");
+    println!("\tpush: update remote refs and objects");
+    println!("\tpull: fetch and merge from another repo");
+    println!("\tremote: get and set repo remotes");
+    println!("* plumbing:");
+    println!("\thash-object: compute object hash and create storage blob");
+    println!("\tcat-file: show content, type, or size of stored objects");
+    println!("\tls-files: show files in the index");
+    println!("\tread-tree: read tree info from object");
+    println!("\twrite-tree: create tree object from index");
 }
