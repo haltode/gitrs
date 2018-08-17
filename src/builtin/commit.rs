@@ -66,7 +66,9 @@ pub fn commit(message: &str) -> Result<String, Error> {
         let merge_head = Path::new(".git").join("MERGE_HEAD");
         let is_in_merge = merge_head.exists();
         if is_in_merge {
-            let merge_parent = fs::read_to_string(&merge_head)?;
+            let mut merge_parent = fs::read_to_string(&merge_head)?;
+            // Remove '\n' character
+            merge_parent.pop();
             parents.push(merge_parent);
             fs::remove_file(&merge_head)?;
         }
